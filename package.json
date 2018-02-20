@@ -55,7 +55,8 @@
     "react-dom": "^15.4.2",
     "react-redux": "^5.0.7",
     "redux": "^3.7.2",
-    "truffle": "^4.0.6"
+    "truffle": "^4.0.6",
+    "truffle-hdwallet-provider": "0.0.3"
   },
   "scripts": {
     "start": "node scripts/start.js",
