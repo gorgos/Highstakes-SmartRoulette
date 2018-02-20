@@ -11,7 +11,7 @@ contract owned {
 }
 
 
-contract Roulette is owned {
+contract roulette is owned {
     // bank
     bytes32 storedBankHash;
     uint256 storedBankValue;
