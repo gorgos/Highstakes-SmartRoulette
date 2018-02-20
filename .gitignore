@@ -6,6 +6,7 @@ node_modules
 _SpecRunner.html
 __benchmarks__
 build/
+build_webpack/
 remote-repo/
 coverage/
 flow-coverage/
