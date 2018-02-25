@@ -4,7 +4,7 @@ var mnemonic = "candy maple cake sugar pudding cream honey rich smooth crumble s
 module.exports = {
   networks: {
     development: {
-      host: "localhost",
+     host: "localhost",
       port: 7545,
       network_id: "*", // Match any network id
     },

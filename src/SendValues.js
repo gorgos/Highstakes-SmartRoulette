@@ -13,6 +13,7 @@ class SendValues extends React.Component {
     this._onInputChange = this._onInputChange.bind(this);
     this._onSendBankValueClick = this._onSendBankValueClick.bind(this);
     this._onSendUserValueClick = this._onSendUserValueClick.bind(this);
+    this._onGetRouletteNumber = this._onGetRouletteNumber.bind(this);
     this._onEvaluateClick = this._onEvaluateClick.bind(this);
   }
 
@@ -33,6 +34,7 @@ class SendValues extends React.Component {
             placeholder="User value"
           />
         <button onClick={ this._onSendUserValueClick }>Send</button>
+        <button onClick={ this._onGetRouletteNumber }>GetRouletteNumber</button>
         <button onClick={ this._onEvaluateClick }>Evaluate</button>
       </div>
     );
@@ -48,7 +50,7 @@ class SendValues extends React.Component {
     this.props.web3.eth.getAccounts((error, accounts) => {
       this.props.roulette.deployed()
         .then(instance => {
-          instance.sendBankValue(this.state.bankValue, { from: accounts[0] });
+          return instance.sendBankValue(this.state.bankValue, { from: accounts[0] });
         }).then(result => console.log(result));
     });
   }
@@ -57,8 +59,17 @@ class SendValues extends React.Component {
     this.props.web3.eth.getAccounts((error, accounts) => {
       this.props.roulette.deployed()
         .then(instance => {
-          instance.sendUserValue(this.state.userValue, { from: accounts[0] });
+          return instance.sendUserValue(this.state.userValue, { from: accounts[0] });
         }).then(result => console.log(result));
+    });
+  }
+
+  _onGetRouletteNumber() {
+    this.props.web3.eth.getAccounts((error, accounts) => {
+      this.props.roulette.deployed()
+        .then(instance => {
+          return instance.getRouletteNumber(230, { from: accounts[0] });
+        }).then(result => console.log(result.toNumber()));
     });
   }
 
@@ -66,7 +77,7 @@ class SendValues extends React.Component {
     this.props.web3.eth.getAccounts((error, accounts) => {
       this.props.roulette.deployed()
         .then(instance => {
-          instance.evaluateBet({ from: accounts[0] });
+          return instance.evaluateBet({ from: accounts[0] });
         }).then(result => console.log(result));
     });
   }

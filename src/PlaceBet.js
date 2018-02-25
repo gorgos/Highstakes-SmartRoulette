@@ -61,7 +61,10 @@ class PlaceBet extends React.Component {
             this.state.betGuessInput,
             this.state.userInput,
             this.state.hashInput,
-            { from: accounts[0], value: this.state.betAmountInput },
+            {
+              from: accounts[0],
+              value: parseInt(this.state.betAmountInput*1000000000000000000, 10),
+            },
         )).then(result => console.log(result));
     });
   }

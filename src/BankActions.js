@@ -12,7 +12,7 @@ class BankActions extends React.Component {
     };
 
     this._onInputChange = this._onInputChange.bind(this);
-    this._onShowFundClick = this._onShowFundClick.bind(this);
+    this._onRetrieveFundsClick = this._onRetrieveFundsClick.bind(this);
     this._onSetBankHashClick = this._onSetBankHashClick.bind(this);
     this._onIncreaseBankFundsClick = this._onIncreaseBankFundsClick.bind(this);
   }
@@ -27,7 +27,7 @@ class BankActions extends React.Component {
               onChange={ e => this._onInputChange('address', e) }
               placeholder="Address"
             />
-          <button onClick={ this._onShowFundClick }>Show funds</button>
+          <button onClick={ this._onRetrieveFundsClick }>Retrieve funds</button>
           <input
               type="text"
               value={ this.state.amount }
@@ -55,11 +55,11 @@ class BankActions extends React.Component {
     this.setState(state);
   }
 
-  _onShowFundClick() {
+  _onRetrieveFundsClick() {
     this.props.web3.eth.getAccounts((error, accounts) => {
       this.props.roulette.deployed()
         .then(instance => {
-          instance.showBalance(this.state.address, { from: accounts[0] });
+          return  instance.retrieveMoney(this.state.address, { from: accounts[0] });
         }).then(result => console.log(result));
     });
   }
@@ -68,7 +68,7 @@ class BankActions extends React.Component {
     this.props.web3.eth.getAccounts((error, accounts) => {
       this.props.roulette.deployed()
         .then(instance => {
-          instance.setBankHash(this.state.bankHash, { from: accounts[0] });
+          return instance.setBankHash(this.state.bankHash, { from: accounts[0] });
         }).then(result => console.log(result));
     });
   }
@@ -77,7 +77,10 @@ class BankActions extends React.Component {
     this.props.web3.eth.getAccounts((error, accounts) => {
       this.props.roulette.deployed()
         .then(instance => {
-          instance.getRouletteNumber(10, { from: accounts[0], value: parseInt(this.state.amount, 10) });
+          return instance.increaseBankFunds({
+            from: accounts[0],
+            value: parseInt(this.state.amount*1000000000000000000, 10),
+          });
         }).then(result => console.log(result));
     });
   }

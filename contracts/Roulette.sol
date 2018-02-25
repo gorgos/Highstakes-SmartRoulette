@@ -14,16 +14,16 @@ contract owned {
 contract roulette is owned {
     // bank
     bytes32 storedBankHash;
-    uint256 storedBankValue;
+    uint8 storedBankValue;
 
     // user
     bytes32 storedUserHash;
-    uint256 storedUserValue;
+    uint8 storedUserValue;
     address userAddress;
 
     // game
     bool storedUserBet;
-    uint blockWhenValuesSubmitted;
+    uint256 blockWhenValuesSubmitted;
     mapping (address => uint256) public registeredFunds;
 
     function resetContract() public onlyOwner {
@@ -36,8 +36,9 @@ contract roulette is owned {
         blockWhenValuesSubmitted = 0;
     }
 
-    function increaseBankFunds() public payable {
-        registeredFunds[bankAddress] = msg.value;
+    function increaseBankFunds() public payable onlyOwner {
+        require(msg.value > 0);
+        registeredFunds[msg.sender] = msg.value;
     }
 
     function retrieveMoney(address _address) public {
@@ -66,12 +67,12 @@ contract roulette is owned {
         if (storedUserHash != 0) { blockWhenValuesSubmitted = block.number; }
     }
 
-    function sendBankValue(uint256 _value) public onlyOwner {
+    function sendBankValue(uint8 _value) public onlyOwner {
         require(keccak256(_value) == storedBankHash);
         storedBankValue = _value;
     }
 
-    function sendUserValue(uint256 _value) public {
+    function sendUserValue(uint8 _value) public {
        require(keccak256(_value) == storedUserHash);
         storedUserValue = _value;
     }
@@ -84,8 +85,8 @@ contract roulette is owned {
 
     function evaluateBet() public {
         require(storedUserValue != 0 && storedBankValue != 0);
-        uint256 random = storedBankValue ^ storedUserValue;
-        uint256 number = getRouletteNumber(random);
+        uint8 random = storedBankValue ^ storedUserValue;
+        uint8 number = getRouletteNumber(random);
         uint256 winningAmount = registeredFunds[userAddress] * 2;
         address winner;
 
@@ -99,13 +100,13 @@ contract roulette is owned {
         registeredFunds[winner] += winningAmount;
     }
 
-    function debugShowHashForValue(uint256 _value) public pure returns (bytes32) {
+    function debugShowHashForValue(uint8 _value) public pure returns (bytes32) {
         return keccak256(_value);
     }
 
-    function getRouletteNumber(uint256 _random) public pure returns (uint256) {
-        uint256 max = 2**256 - 1;
-        uint256 numberDistance = max / 37;
+    function getRouletteNumber(uint8 _random) public pure returns (uint8) {
+        // uint256 max = 2**256 - 1;
+        uint8 numberDistance = 7; // uint256: max / 37;
         return _random / numberDistance;
     }
 }
