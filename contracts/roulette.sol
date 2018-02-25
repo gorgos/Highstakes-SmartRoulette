@@ -91,7 +91,6 @@ contract roulette is owned {
         address winner;
 
         if ((number % 2 != 0 && storedUserBet) || (number != 0 && !storedUserBet)) {
-            registeredFunds[userAddress] *= 2 ;
             winner = userAddress;
         } else {
             winner = bankAddress;
