@@ -43,7 +43,7 @@ contract roulette is owned {
     }
 
     function retrieveMoney() public {
-        _address.transfer(registeredFunds[msg.sender]);
+        msg.sender.transfer(registeredFunds[msg.sender]);
     }
 
     function showBankAddress() public view returns (address) {
