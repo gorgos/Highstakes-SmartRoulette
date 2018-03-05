@@ -1,6 +1,9 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
+const ROULETTE_NUMBER_ORDER = [26, 3, 35, 12, 28, 7, 29, 18, 22, 9, 31, 14, 20, 1, 33, 16, 24, 5, 10, 23, 8, 30, 11, 36, 13, 27, 6, 34, 17, 25, 2, 21, 4, 19, 15, 32, 0];
+const CIRCLE_DEGREE = 360;
+
 class SendValues extends React.Component {
   constructor(props) {
     super(props);
@@ -8,12 +11,14 @@ class SendValues extends React.Component {
     this.state = {
       bankValue: '',
       userValue: '',
+      wheelSpin: 0,
     };
 
     this._onInputChange = this._onInputChange.bind(this);
     this._onSendBankValueClick = this._onSendBankValueClick.bind(this);
     this._onSendUserValueClick = this._onSendUserValueClick.bind(this);
     this._onGetRouletteNumber = this._onGetRouletteNumber.bind(this);
+    this._spinRouletteWheel = this._spinRouletteWheel.bind(this);
     this._onEvaluateClick = this._onEvaluateClick.bind(this);
   }
 
@@ -36,6 +41,14 @@ class SendValues extends React.Component {
         <button onClick={ this._onSendUserValueClick }>Send</button>
         <button onClick={ this._onGetRouletteNumber }>GetRouletteNumber</button>
         <button onClick={ this._onEvaluateClick }>Evaluate</button>
+        <img
+            width="1"
+            height="1"
+            src="http://upload.wikimedia.org/wikipedia/commons/7/7d/European_roulette_wheel.svg"
+            alt="Roulette wheel"
+            className="roulette-wheel"
+            ref={ rouletteWheel => this._rouletteWheel = rouletteWheel }
+          />
       </div>
     );
   }
@@ -68,9 +81,25 @@ class SendValues extends React.Component {
     this.props.web3.eth.getAccounts((error, accounts) => {
       this.props.roulette.deployed()
         .then(instance => {
-          return instance.getRouletteNumber(230, { from: accounts[0] });
-        }).then(result => console.log(result.toNumber()));
+          return instance.getRouletteNumber(0, { from: accounts[0] });
+        }).then(result => this._spinRouletteWheel(result.toNumber()));
     });
+  }
+
+  _spinRouletteWheel(number) {
+    const previousTransformValue = this._rouletteWheel.style.getPropertyValue('transform');
+    this._rouletteWheel.removeAttribute('style');
+
+    const minRounds = 2;
+    const maxRounds = 5;
+    const rounds = Math.floor(Math.random() * maxRounds + minRounds);
+    let deg = CIRCLE_DEGREE * rounds + degreeForNumber(number);
+
+    if (`rotate(${deg}deg)` === previousTransformValue) {
+      deg += CIRCLE_DEGREE;
+    }
+
+    this._rouletteWheel.setAttribute('style', `-webkit-transform: rotate(${deg}deg);`);
   }
 
   _onEvaluateClick() {
@@ -78,9 +107,14 @@ class SendValues extends React.Component {
       this.props.roulette.deployed()
         .then(instance => {
           return instance.evaluateBet({ from: accounts[0] });
-        }).then(result => console.log(result));
+        }).then(result => console.log('result', result) /*this._spinRouletteWheel(result)*/);
     });
   }
+}
+
+function degreeForNumber(number) {
+  const position = ROULETTE_NUMBER_ORDER.indexOf(number) + 1;
+  return CIRCLE_DEGREE / ROULETTE_NUMBER_ORDER.length * position;
 }
 
 const mapStateToProps = state => {

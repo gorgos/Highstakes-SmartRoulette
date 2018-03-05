@@ -25,6 +25,7 @@ contract roulette is owned {
     bool storedUserBet;
     uint256 blockWhenValuesSubmitted;
     mapping (address => uint256) public registeredFunds;
+    mapping (address => uint256) public lockedFunds;
 
     function resetContract() public onlyOwner {
         storedBankHash = 0x0;
@@ -38,11 +39,11 @@ contract roulette is owned {
 
     function increaseBankFunds() public payable onlyOwner {
         require(msg.value > 0);
-        registeredFunds[msg.sender] = msg.value;
+        registeredFunds[msg.sender] += msg.value;
     }
 
-    function retrieveMoney(address _address) public {
-        _address.transfer(registeredFunds[_address]);
+    function retrieveMoney() public {
+        _address.transfer(registeredFunds[msg.sender]);
     }
 
     function showBankAddress() public view returns (address) {
@@ -53,18 +54,21 @@ contract roulette is owned {
         return registeredFunds[_address];
     }
 
-    function placeBet(bool _bet, address _userAddress, bytes32 _hash) public payable {
-        require(userAddress == 0);
+    function placeBet(bool _bet, bytes32 _hash) public payable {
+        require(userAddress == 0 && registeredFunds[bankAddress] >= msg.value);
 
-        userAddress = _userAddress;
+        userAddress = msg.sender;
         storedUserHash = _hash;
         storedUserBet = _bet;
-        registeredFunds[msg.sender] = msg.value;
+        lockedFunds[msg.sender] = msg.value;
+        registeredFunds[bankAddress] -= msg.value;
+        lockedFunds[bankAddress] = msg.value;
     }
 
     function setBankHash(bytes32 _hash) public onlyOwner {
+        require(storedUserHash != 0);
         storedBankHash = _hash;
-        if (storedUserHash != 0) { blockWhenValuesSubmitted = block.number; }
+        blockWhenValuesSubmitted = block.number;
     }
 
     function sendBankValue(uint8 _value) public onlyOwner {
@@ -73,21 +77,21 @@ contract roulette is owned {
     }
 
     function sendUserValue(uint8 _value) public {
-       require(keccak256(_value) == storedUserHash);
+        require(keccak256(_value) == storedUserHash);
         storedUserValue = _value;
     }
 
     function checkUserValueTimeout() public onlyOwner {
         require(block.number > (blockWhenValuesSubmitted + 1000) && storedUserValue != 0);
-        registeredFunds[bankAddress] += registeredFunds[userAddress];
-        registeredFunds[userAddress] = 0;
+        registeredFunds[bankAddress] += lockedFunds[userAddress];
+        lockedFunds[userAddress] = 0;
     }
 
-    function evaluateBet() public {
+    function evaluateBet() public returns (uint8) {
         require(storedUserValue != 0 && storedBankValue != 0);
         uint8 random = storedBankValue ^ storedUserValue;
         uint8 number = getRouletteNumber(random);
-        uint256 winningAmount = registeredFunds[userAddress] * 2;
+        uint256 winningAmount = lockedFunds[userAddress] * 2;
         address winner;
 
         if ((number % 2 != 0 && storedUserBet) || (number != 0 && !storedUserBet)) {
@@ -96,7 +100,10 @@ contract roulette is owned {
             winner = bankAddress;
         }
 
+        lockedFunds[bankAddress] = 0;
+        lockedFunds[userAddress] = 0;
         registeredFunds[winner] += winningAmount;
+        return number;
     }
 
     function debugShowHashForValue(uint8 _value) public pure returns (bytes32) {

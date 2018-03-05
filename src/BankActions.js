@@ -9,12 +9,14 @@ class BankActions extends React.Component {
       address: '',
       bankHash: '',
       amount: '',
+      showFundsAddress: '',
     };
 
     this._onInputChange = this._onInputChange.bind(this);
     this._onRetrieveFundsClick = this._onRetrieveFundsClick.bind(this);
     this._onSetBankHashClick = this._onSetBankHashClick.bind(this);
     this._onIncreaseBankFundsClick = this._onIncreaseBankFundsClick.bind(this);
+    this._onShowFundsClick = this._onShowFundsClick.bind(this);
   }
 
   render() {
@@ -44,6 +46,13 @@ class BankActions extends React.Component {
                 placeholder="Bank hash"
               />
             <button onClick={ this._onSetBankHashClick }>Set bank hash</button>
+            <input
+                type="text"
+                value={ this.state.showFundsAddress }
+                onChange={ e => this._onInputChange('showFundsAddress', e) }
+                placeholder="Address"
+              />
+            <button onClick={ this._onShowFundsClick }>Show funds</button>
           </div>
       </div>
     );
@@ -79,9 +88,18 @@ class BankActions extends React.Component {
         .then(instance => {
           return instance.increaseBankFunds({
             from: accounts[0],
-            value: parseInt(this.state.amount*1000000000000000000, 10),
+            value: parseInt(this.state.amount * 10e18, 10),
           });
         }).then(result => console.log(result));
+    });
+  }
+
+  _onShowFundsClick() {
+    this.props.web3.eth.getAccounts((error, accounts) => {
+      this.props.roulette.deployed()
+        .then(instance => {
+          return instance.showBalance(this.state.showFundsAddress, { from: accounts[0] });
+        }).then(result => console.log(result.toNumber()));
     });
   }
 }

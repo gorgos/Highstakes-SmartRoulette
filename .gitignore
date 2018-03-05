@@ -5,7 +5,6 @@ node_modules
 .grunt
 _SpecRunner.html
 __benchmarks__
-build/
 build_webpack/
 remote-repo/
 coverage/
@@ -19,6 +18,7 @@ chrome-user-data
 *.sublime-project
 *.sublime-workspace
 .idea
+.serverless
 *.iml
 .vscode
 *.swp

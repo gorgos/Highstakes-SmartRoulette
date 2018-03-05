@@ -8,7 +8,6 @@ class PlaceBet extends React.Component {
     this.state = {
       betGuessInput: '',
       betAmountInput: '',
-      userInput: '',
       hashInput: '',
     };
 
@@ -33,12 +32,6 @@ class PlaceBet extends React.Component {
           />
         <input
             type="text"
-            value={ this.state.userInput }
-            onChange={ e => this._onInputChange('userInput', e) }
-            placeholder="Address"
-          />
-        <input
-            type="text"
             value={ this.state.hashInput }
             onChange={ e => this._onInputChange('hashInput', e) }
             placeholder="Hash of secret value"
@@ -59,11 +52,10 @@ class PlaceBet extends React.Component {
       this.props.roulette.deployed()
         .then(instance => instance.placeBet(
             this.state.betGuessInput,
-            this.state.userInput,
             this.state.hashInput,
             {
               from: accounts[0],
-              value: parseInt(this.state.betAmountInput*1000000000000000000, 10),
+              value: parseInt(this.state.betAmountInput*10e18, 10),
             },
         )).then(result => console.log(result));
     });
