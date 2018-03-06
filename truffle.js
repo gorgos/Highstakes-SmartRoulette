@@ -4,8 +4,6 @@ const INFURA_API_KEY = process.env.INFURA_API_KEY;
 const MNEMONIC = process.env.MNEMONIC;
 const HDWalletProvider = require('truffle-hdwallet-provider');
 
-console.log({ INFURA_API_KEY, MNEMONIC });
-
 const NETWORK_IDS = {
   // mainnet: 1,
   ropsten: 2,

@@ -6,8 +6,6 @@ cache:
 install:
   - npm i --save-dev
   - npm i -g codecov
-  - truffle compile
 script:
-  - npm run migrate:rinkeby
-  - truffle test
+  - truffle test --network rinkeby
   - codecov

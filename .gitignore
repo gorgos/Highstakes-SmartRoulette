@@ -6,7 +6,6 @@ node_modules
 .env
 _SpecRunner.html
 __benchmarks__
-build/
 build_webpack/
 remote-repo/
 coverage/
