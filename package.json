@@ -55,6 +55,7 @@
     "whatwg-fetch": "1.0.0"
   },
   "dependencies": {
+    "babel-preset-react": "^6.24.1",
     "jquery": "^3.3.1",
     "npm": "^5.7.1",
     "react": "^15.4.2",

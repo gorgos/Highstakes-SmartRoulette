@@ -1,4 +1,5 @@
-require('dotenv').config();
+const dotenv = require('dotenv');
+if (dotenv) { dotenv.config(); }
 
 const INFURA_API_KEY = process.env.INFURA_API_KEY;
 const MNEMONIC = process.env.MNEMONIC;
