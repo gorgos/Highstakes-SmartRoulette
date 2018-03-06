@@ -8,5 +8,6 @@ install:
   - npm i -g codecov
   - truffle compile
 script:
+  - npm run migrate:rinkeby
   - truffle test
   - codecov

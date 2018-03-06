@@ -1,20 +1,30 @@
-var HDWalletProvider = require("truffle-hdwallet-provider");
-var mnemonic = "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat";
+require('dotenv').config();
+
+const INFURA_API_KEY = process.env.INFURA_API_KEY;
+const MNEMONIC = process.env.MNEMONIC;
+const HDWalletProvider = require('truffle-hdwallet-provider');
+
+const NETWORK_IDS = {
+  // mainnet: 1,
+  ropsten: 2,
+  rinkeby: 4,
+  kovan: 42
+};
 
 module.exports = {
   networks: {
     development: {
-     host: "localhost",
+      host: "localhost",
       port: 8545,
-      network_id: "*", // Match any network id
+      network_id: "*",
     },
-    ropsten: {
-      provider: function() {
-        return new HDWalletProvider(mnemonic, "https://ropsten.infura.io/iwrkJXfZBNem25lLlBFR")
-      },
-      gas: 4698712,
-      network_id: 3,
-      from: '0x627306090abab3a6e1400e9345bc60c78a8bef57',
-    },
-  },
+  }
 };
+
+for (let networkName in NETWORK_IDS) {
+  module.exports.networks[ networkName ] = {
+    provider: new HDWalletProvider(MNEMONIC, 'https://' + networkName + '.infura.io/' + INFURA_API_KEY),
+    network_id: NETWORK_IDS[ networkName ],
+    gas: 4698712
+  };
+}
