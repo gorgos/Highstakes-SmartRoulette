@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.19;
 
 contract owned {
     function owned() public { bankAddress = msg.sender; }
@@ -26,6 +26,8 @@ contract roulette is owned {
     uint256 blockWhenValuesSubmitted;
     mapping (address => uint256) public registeredFunds;
     mapping (address => uint256) public lockedFunds;
+
+    uint8[] redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
 
     function resetContract() public onlyOwner {
         storedBankHash = 0x0;
@@ -94,7 +96,16 @@ contract roulette is owned {
         uint256 winningAmount = lockedFunds[userAddress] * 2;
         address winner;
 
-        if ((number % 2 != 0 && storedUserBet) || (number != 0 && !storedUserBet)) {
+        bool isRed = false;
+        uint8 index = 9; // middle of redNumbers array
+
+        for (uint8 counter = 0; counter < 5; counter++) {
+            if (number == redNumbers[index]) { isRed=true; break; }
+            else if (number < redNumbers[index]) { index /= 1/(2**counter); }
+            index *= 1/(2**counter);
+        }
+
+        if ((isRed && storedUserBet) || (!isRed && !storedUserBet && number != 0)) {
             winner = userAddress;
         } else {
             winner = bankAddress;
