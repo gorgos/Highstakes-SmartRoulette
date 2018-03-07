@@ -14,6 +14,9 @@
     "babel-preset-stage-2": "^6.3.13",
     "babel-preset-stage-3": "^6.3.13",
     "case-sensitive-paths-webpack-plugin": "1.1.4",
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
+    "chai-bignumber": "^2.0.2",
     "chalk": "1.1.3",
     "connect-history-api-fallback": "1.3.0",
     "cross-spawn": "4.0.2",
@@ -63,8 +66,10 @@
     "react-redux": "^5.0.7",
     "react-rotation": "^1.3.0",
     "redux": "^3.7.2",
+    "serverless": "^1.26.1",
     "truffle": "^4.0.6",
-    "truffle-hdwallet-provider": "0.0.3"
+    "truffle-hdwallet-provider": "0.0.3",
+    "web3-utils": "^1.0.0-beta.30"
   },
   "scripts": {
     "start": "node scripts/start.js",
