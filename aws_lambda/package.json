@@ -9,7 +9,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "aws-sdk": "^2.200.0",
     "biguint-format": "^1.0.0",
     "https": "^1.0.0",
     "querystring": "^0.2.0"

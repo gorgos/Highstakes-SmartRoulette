@@ -7,7 +7,7 @@ function random (qty) {
     return crypto.randomBytes(qty);
 }
 
-module.exports.random = (event, context, callback) => {
+module.exports.handler = (event, context, callback) => {
   const response = {
     statusCode: 200,
     body: JSON.stringify({

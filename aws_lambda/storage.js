@@ -62,7 +62,7 @@ function returnSucceed(context, body, code = 200) {
 }
 
 
-module.exports.storage = function (event, context) {
+module.exports.handler = function (event, context) {
   console.log('event', event);
   console.log('context', context);
 
