@@ -1,12 +1,9 @@
 import React from 'react';
 import getWeb3 from './utils/getWeb3';
-
 import { connect } from 'react-redux';
 
-import BankActions from './BankActions';
-import PlaceBet from './PlaceBet';
-import SendValues from './SendValues';
-import RouletteWheel from './RouletteWheel';
+import BankAndUserFunds from './BankAndUserFunds';
+import RouletteGame from './RouletteGame';
 
 import './css/oswald.css';
 import './css/open-sans.css';
@@ -33,8 +30,8 @@ class App extends React.Component {
           <div className="pure-g">
             <div className="pure-u-1-1">
               <h2>Roulette Contract</h2>
-              <SendValues />
-              <RouletteWheel />
+              <BankAndUserFunds />
+              <RouletteGame />
             </div>
           </div>
         </main>

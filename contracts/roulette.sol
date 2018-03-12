@@ -2,7 +2,7 @@ pragma solidity ^0.4.19;
 
 contract owned {
     function owned() public { bankAddress = msg.sender; }
-    address bankAddress;
+    address public bankAddress;
 
     modifier onlyOwner {
         require(msg.sender == bankAddress);
@@ -27,6 +27,7 @@ contract roulette is owned {
         uint256 lockedFunds;
     }
 
+    event FundsChanged(address _address);
     event BankValueWasSet(address userAddress);
 
     mapping (address => GameRound) public gameRounds;
@@ -42,21 +43,16 @@ contract roulette is owned {
     function increaseBankFunds() external payable onlyOwner {
         require(msg.value > 0);
         registeredFunds[bankAddress] += msg.value;
+        FundsChanged(bankAddress);
     }
 
     function retrieveMoney() external {
         require (registeredFunds[msg.sender] > 0);
 
         registeredFunds[msg.sender] = 0;
+        FundsChanged(msg.sender);
+
         msg.sender.transfer(registeredFunds[msg.sender]);
-    }
-
-    function getUserAndBankBalance() external view returns (uint256, uint256) {
-        return (registeredFunds[msg.sender], registeredFunds[bankAddress]);
-    }
-
-    function showBankAddress() external view returns (address) {
-        return bankAddress;
     }
 
     function placeBet(bool _bet, bytes32 _hash) external payable {
@@ -68,6 +64,7 @@ contract roulette is owned {
         gameRounds[msg.sender].storedUserBet = _bet;
         gameRounds[msg.sender].lockedFunds = msg.value * 2;
         registeredFunds[bankAddress] -= msg.value;
+        FundsChanged(bankAddress);
     }
 
     function setBankHash(bytes32 _hash, address _address) external onlyOwner {
@@ -96,9 +93,10 @@ contract roulette is owned {
 
     function checkUserValueTimeout(address _address) external onlyOwner {
         require(block.number > (gameRounds[_address].blockWhenValueSubmitted + 1000));
-        require(gameRounds[_address].storedUserValue != 0);
+        require(gameRounds[_address].storedUserValue == 0);
 
         registeredFunds[bankAddress] += gameRounds[_address].lockedFunds;
+        FundsChanged(bankAddress);
         resetContractFor(_address);
     }
 
@@ -121,6 +119,7 @@ contract roulette is owned {
             winner = bankAddress;
         }
 
+        FundsChanged(winner);
         registeredFunds[winner] += winningAmount;
         lastRouletteNumbers[msg.sender] = number;
         resetContractFor(msg.sender);
