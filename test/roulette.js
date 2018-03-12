@@ -2,7 +2,7 @@ require('babel-polyfill');
 const Web3Utils = require('web3-utils');
 const Roulette = artifacts.require("./roulette.sol");
 
-contract('Roulette', function(accounts) {
+contract('Roulette', accounts => {
   let rouletteInstance, bankAccount, userAccount;
 
   beforeEach('setup contract', async () => {
@@ -31,8 +31,8 @@ function itShouldProperlyEvaluate(accounts, userBet, result) {
       rouletteInstance = await Roulette.deployed();
       bankAccount = accounts[0];
       userAccount = accounts[1];
-      await rouletteInstance.retrieveMoney({ from: bankAccount });
-      await rouletteInstance.retrieveMoney({ from: userAccount });
+      try { await rouletteInstance.retrieveMoney({ from: bankAccount }); } catch(e) {}
+      try { await rouletteInstance.retrieveMoney({ from: userAccount }); } catch(e) {}
       await rouletteInstance.increaseBankFunds({ from: bankAccount, value: 100 });
       await rouletteInstance.placeBet(userBet, userHash, { from: userAccount, value: 10 });
       await rouletteInstance.setBankHash(bankHash, userAccount, { from: bankAccount });

@@ -10,7 +10,6 @@ contract owned {
     }
 }
 
-
 contract roulette is owned {
 
     struct GameRound {
@@ -28,7 +27,8 @@ contract roulette is owned {
         uint256 lockedFunds;
     }
 
-    mapping (address => GameRound) gameRounds;
+    mapping (address => GameRound) public gameRounds;
+    mapping (address => uint8) public lastRouletteNumbers;
     mapping (address => uint256) public registeredFunds;
 
     bool[37] numberIsRed = [false, true, false, true, false, true, false, true, false, true, false, false, true, false, true, false, true, false, true, true, false, true, false, true, false, true, false, true, false, false, true, false, true, false, true, false, true];
@@ -37,25 +37,27 @@ contract roulette is owned {
         gameRounds[_address] = GameRound(0x0, 0, 0x0, 0, false, 0, 0);
     }
 
-    function increaseBankFunds() public payable onlyOwner {
+    function increaseBankFunds() external payable onlyOwner {
         require(msg.value > 0);
-        registeredFunds[msg.sender] += msg.value;
+        registeredFunds[bankAddress] += msg.value;
     }
 
-    function retrieveMoney() public {
+    function retrieveMoney() external {
+        require (registeredFunds[msg.sender] > 0);
+
         registeredFunds[msg.sender] = 0;
         msg.sender.transfer(registeredFunds[msg.sender]);
     }
 
-    function showBankAddress() public view returns (address) {
+    function getUserAndBankBalance() external view returns (uint256, uint256) {
+        return (registeredFunds[msg.sender], registeredFunds[bankAddress]);
+    }
+
+    function showBankAddress() external view returns (address) {
         return bankAddress;
     }
 
-    function showBalance(address _address) public view returns (uint256) {
-        return registeredFunds[_address];
-    }
-
-    function placeBet(bool _bet, bytes32 _hash) public payable {
+    function placeBet(bool _bet, bytes32 _hash) external payable {
         require(gameRounds[msg.sender].storedUserHash == 0);
         require(_hash != 0);
         require(registeredFunds[bankAddress] >= msg.value);
@@ -66,13 +68,14 @@ contract roulette is owned {
         registeredFunds[bankAddress] -= msg.value;
     }
 
-    function setBankHash(bytes32 _hash, address _address) public onlyOwner {
+    function setBankHash(bytes32 _hash, address _address) external onlyOwner {
         require(gameRounds[_address].storedUserHash != 0);
+        require(gameRounds[_address].storedBankHash != 0);
 
         gameRounds[_address].storedBankHash = _hash;
     }
 
-    function sendBankValue(uint8 _value, address _address) public onlyOwner {
+    function sendBankValue(uint8 _value, address _address) external onlyOwner {
         require(keccak256(_value) == gameRounds[_address].storedBankHash);
         require(gameRounds[_address].storedUserValue != 0);
 
@@ -80,13 +83,13 @@ contract roulette is owned {
         gameRounds[_address].blockWhenValueSubmitted = block.number;
     }
 
-    function sendUserValue(uint8 _value) public {
+    function sendUserValue(uint8 _value) external {
         require(keccak256(_value) == gameRounds[msg.sender].storedUserHash);
 
         gameRounds[msg.sender].storedUserValue = _value;
     }
 
-    function checkUserValueTimeout(address _address) public onlyOwner {
+    function checkUserValueTimeout(address _address) external onlyOwner {
         require(block.number > (gameRounds[_address].blockWhenValueSubmitted + 1000));
         require(gameRounds[_address].storedUserValue != 0);
 
@@ -94,7 +97,7 @@ contract roulette is owned {
         resetContractFor(_address);
     }
 
-    function evaluateBet() public returns (uint8) {
+    function evaluateBet() external {
         GameRound memory round = gameRounds[msg.sender];
 
         require(round.storedUserValue != 0);
@@ -105,25 +108,26 @@ contract roulette is owned {
         uint256 winningAmount = round.lockedFunds;
         address winner;
 
-        bool _isRed = numberIsRed[number];
+        bool isRed = numberIsRed[number];
         bool userBet = round.storedUserBet;
 
-        if ((_isRed && userBet) || (!_isRed && !userBet && number != 0)) {
+        if ((isRed && userBet) || (!isRed && !userBet && number != 0)) {
             winner = msg.sender;
         } else {
             winner = bankAddress;
         }
 
         registeredFunds[winner] += winningAmount;
+        lastRouletteNumbers[msg.sender] = number;
         resetContractFor(msg.sender);
-        return number;
     }
 
-    function debugShowHashForValue(uint8 _value) public pure returns (bytes32) {
+    function debugShowHashForValue(uint8 _value) external pure returns (bytes32) {
         return keccak256(_value);
     }
 
     function getRouletteNumber(uint8 _random) public pure returns (uint8) {
+        // TODO public -> private
         // uint256 max = 2**256 - 1;
         uint8 numberDistance = 7; // uint256: max / 37;
         return _random / numberDistance;

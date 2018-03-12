@@ -13,6 +13,13 @@
 
 service: storage
 
+plugins:
+  - serverless-dotenv-plugin
+
+custom:
+  dotenv:
+    path: ../.env
+
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
 # frameworkVersion: "=X.X.X"
@@ -53,17 +60,26 @@ provider:
 #  exclude:
 #    - exclude-me.js
 #    - exclude-me-dir/**
-
 functions:
-  storage:
-    handler: storage.handler
-  random:
-    handler: random.handler
+  sendBankValue:
+    timeout: 200
+    handler: sendBankValue.handler
+    environment:
+      INFURA_API_KEY : ${env:INFURA_API_KEY}
+      MNEMONIC : ${env:MNEMONIC}
     events:
       - http:
-          path: handler
+          path: send
           method: get
-          cors: true
+          cors: false # TODO
+  setBankHash:
+    timeout: 200
+    handler: setBankHash.handler
+    events:
+      - http:
+          path: set
+          method: get
+          cors: false # TODO
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events

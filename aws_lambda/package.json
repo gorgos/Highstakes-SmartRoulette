@@ -4,6 +4,8 @@
   "description": "",
   "main": "handler.js",
   "scripts": {
+    "deploy": "serverless deploy -v",
+    "install": "[ -e node_modules/scrypt/build/Release/scrypt.node ] || docker run --rm -v $PWD:/data -w /data node:6 npm install scrypt",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -11,6 +13,11 @@
   "dependencies": {
     "biguint-format": "^1.0.0",
     "https": "^1.0.0",
-    "querystring": "^0.2.0"
+    "truffle-hdwallet-provider": "0.0.3",
+    "web3": "^0.20.5",
+    "web3-utils": "^1.0.0-beta.30"
+  },
+  "devDependencies": {
+    "serverless-dotenv-plugin": "^1.0.2"
   }
 }
