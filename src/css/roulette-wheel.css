@@ -1,6 +1,30 @@
 .user-funds {
     padding-left: 40px;
     color: white;
+    border: #ffffff;
+    border-style: inset;
+    width: 22%;
+    margin-left: 20px;
+}
+
+.no-metamask {
+    color: white;
+
+}
+
+div.container4 {
+    height: 500px;
+    position: relative }
+div.container4 p {
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-right: -50%;
+    transform: translate(-50%, -50%) }
+
+.no-metamask-link {
+    color: #ecfd22;
 }
 
 img.roulette-wheel {
@@ -14,6 +38,9 @@ img.roulette-wheel {
 
 .step-list {
     list-style-type: none;
+    border: #ffffff;
+    border-style: inset;
+    margin-right: 60px;
 }
 
 .spin-wrapper {

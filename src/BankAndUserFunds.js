@@ -79,7 +79,7 @@ class BankAndUserFunds extends React.Component {
           else {
             this.setState(Object.assign(state, { showOldState: this.state }));
             const that = this;
-            setTimeout(() => that.setState({ showOldState: {} }), 8500);
+            setTimeout(() => that.setState({ showOldState: {} }), 10500);
           }
         }
       });

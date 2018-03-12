@@ -12,11 +12,19 @@ import './css/roulette-wheel.css';
 import './App.css';
 
 class App extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = { incorrectNetwork: false };
+  }
   componentWillMount() {
     getWeb3.then(results => {
       this.props.storeWeb3(results.web3);
+      results.web3.version.getNetwork((error, result) => {
+        this.setState({ incorrectNetwork: (error || result !== '4') });
+      });
       this._storeRouletteContract();
-    }).catch(() => console.log('Error finding web3.'));
+    }).catch(error => console.log(error));
   }
 
   render() {
@@ -30,13 +38,19 @@ class App extends React.Component {
           <div className="pure-g">
             <div className="pure-u-1-1">
               <h2>Roulette Contract</h2>
-              <BankAndUserFunds />
-              <RouletteGame />
+              { this._showRouletteUI() && <BankAndUserFunds /> }
+              { this._showRouletteUI() && <RouletteGame /> }
+              { !this.props.web3 && <NoMetaMask /> }
+              { this.state.incorrectNetwork && <IncorrectNetwork /> }
             </div>
           </div>
         </main>
       </div>
     );
+  }
+
+  _showRouletteUI() {
+    return this.props.web3 && !this.state.incorrectNetwork;
   }
 
   _storeRouletteContract() {
@@ -48,9 +62,41 @@ class App extends React.Component {
   }
 }
 
+function NoMetaMask() {
+  return (
+    <ErrorComponent>
+      Please install{' '}
+        <a
+            className="no-metamask-link"
+            href="https://metamask.io/"
+          >
+          MetaMask
+        </a>
+        {' '}Extension!
+    </ErrorComponent>
+  );
+}
+
+function IncorrectNetwork() {
+  return (
+    <ErrorComponent>
+      Please change to Rinkeby test network!
+    </ErrorComponent>
+  );
+}
+
+function ErrorComponent(props) {
+  return (
+    <div className="container4">
+      <p className="no-metamask">
+        { props.children }
+      </p>
+    </div>
+  );
+}
+
 const mapStateToProps = state => {
   return {
-    roulette: state.roulette,
     web3: state.web3,
   };
 }

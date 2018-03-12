@@ -19,7 +19,7 @@ const SEND_BANK_VALUE_ENDPOINT_URL = AWS_ENDPOINT_URL + 'send';
 class RouletteGame extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { chooseColorHint: false, betValue: 0.1 };
+    this.state = { chooseColorHint: false, betValue: 0.1, step: 0 };
     this._onColorButtonClick = this._onColorButtonClick.bind(this);
     this._onButtonClick = this._onButtonClick.bind(this);
     this._onBetValueChange = this._onBetValueChange.bind(this);
@@ -32,7 +32,7 @@ class RouletteGame extends React.Component {
       <div>
         <RouletteWheel ref={ wheel => this._wheel = wheel }/>
         <div className="step-overview">
-          <ul className="step-list">
+          <ul className="step-list" style={{ display: this.state.step === 0 ? 'none' : '' }}>
             { this.state.step > 0 && <li>STEP 1: Place bet and set user hash</li> }
             { this.state.step > 1 && <li>STEP 2: Request server to set hash</li> }
             { this.state.step > 2 && <li>STEP 3: Send own value</li> }
@@ -40,6 +40,7 @@ class RouletteGame extends React.Component {
             { this.state.step > 4 && <li>STEP 5: Request game evaluation</li> }
             { this.state.step > 5 && <li>STEP 6: Get number of evaluation</li> }
           </ul>
+          { this._gameIsLoading() && <ReactSpinner/> }
         </div>
         <div className="control">
           <div>
@@ -49,10 +50,8 @@ class RouletteGame extends React.Component {
                 step={ 0.1 }
                 value={ this.state.betValue }
                 onChange={ this._onBetValueChange }
-                format={ value => Math.round(value * 100) / 100 }
               />
             <div
-                disabled={ this._gameIsLoading() }
                 className="button redbg"
                 onClick={ () => this._onColorButtonClick(1) }
                 style={{ border: `${this.state.color === 1 ? '3px solid white' : ''}`}}
@@ -60,7 +59,6 @@ class RouletteGame extends React.Component {
                 Red
             </div>
             <div
-                disabled={ this._gameIsLoading() }
                 className="button greybg"
                 onClick={ () => this._onColorButtonClick(0) }
                 style={{ border: `${this.state.color === 0 ? '3px solid white' : ''}`}}
@@ -68,21 +66,20 @@ class RouletteGame extends React.Component {
               Black
             </div>
             <div
-                disabled={ this._gameIsLoading() }
                 className="button button-spin"
                 onClick={ this._onButtonClick }
               >
               Spin
             </div>
-            { this.props.gameState === 'loading' && <ReactSpinner/> }
+            <b>{`Current bet amount: ${this.state.betValue} ETH`}</b>
             { this.state.chooseColorHint &&
-              <b style={{ color: 'white' }}>Please choose color</b>
+              <span><br /><b style={{ color: '#e7ff3f' }}>Please choose color first.</b></span>
             }
             { this.props.gameState === 'won' &&
-              <b style={{ color: 'white' }}>Congratulations, you won!!!</b>
+              <span><br /><b style={{ color: '#e7ff3f' }}>Congratulations, you won! :)</b></span>
             }
             { this.props.gameState === 'lost' &&
-              <b style={{ color: 'white' }}>Sorry, you lost. Please try again.</b>
+              <span><br /><b style={{ color: '#e7ff3f' }}>Sorry, you lost. :(</b></span>
             }
           </div>
         </div>
@@ -94,15 +91,18 @@ class RouletteGame extends React.Component {
     return this.props.gameState === 'loading';
   }
 
-  _onBetValueChange(betValue) {
+  _onBetValueChange(value) {
+    const betValue = Math.round(value * 100) / 100;
     this.setState({ betValue });
   }
 
   _onColorButtonClick(color) {
+    if (this._gameIsLoading()) { return; }
     this.setState({ color: color });
   }
 
   _onButtonClick() {
+    if (this._gameIsLoading()) { return; }
     if (this.state.color === undefined) {
       this.setState({ chooseColorHint: true });
       return;
@@ -121,6 +121,8 @@ class RouletteGame extends React.Component {
         }, 8750);
       } catch (e) {
         console.log({ e });
+        this.setState({ step: 0 });
+        this.props.storeGameState('');
       }
     });
   }
