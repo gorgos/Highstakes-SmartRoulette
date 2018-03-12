@@ -3,6 +3,7 @@ import getWeb3 from './utils/getWeb3';
 import { connect } from 'react-redux';
 
 import BankAndUserFunds from './BankAndUserFunds';
+import RetrieveMoney from './RetrieveMoney';
 import RouletteGame from './RouletteGame';
 
 import './css/oswald.css';
@@ -39,6 +40,7 @@ class App extends React.Component {
             <div className="pure-u-1-1">
               <h2>Roulette Contract</h2>
               { this._showRouletteUI() && <BankAndUserFunds /> }
+              { this._showRouletteUI() && <RetrieveMoney /> }
               { this._showRouletteUI() && <RouletteGame /> }
               { !this.props.web3 && <NoMetaMask /> }
               { this.state.incorrectNetwork && <IncorrectNetwork /> }
