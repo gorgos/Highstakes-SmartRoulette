@@ -27,6 +27,8 @@ contract roulette is owned {
         uint256 lockedFunds;
     }
 
+    event BankValueWasSet(address userAddress);
+
     mapping (address => GameRound) public gameRounds;
     mapping (address => uint8) public lastRouletteNumbers;
     mapping (address => uint256) public registeredFunds;
@@ -70,7 +72,7 @@ contract roulette is owned {
 
     function setBankHash(bytes32 _hash, address _address) external onlyOwner {
         require(gameRounds[_address].storedUserHash != 0);
-        require(gameRounds[_address].storedBankHash != 0);
+        require(gameRounds[_address].storedBankHash == 0);
 
         gameRounds[_address].storedBankHash = _hash;
     }
@@ -78,13 +80,16 @@ contract roulette is owned {
     function sendBankValue(uint8 _value, address _address) external onlyOwner {
         require(keccak256(_value) == gameRounds[_address].storedBankHash);
         require(gameRounds[_address].storedUserValue != 0);
+        require(gameRounds[_address].storedBankValue == 0);
 
         gameRounds[_address].storedBankValue = _value;
         gameRounds[_address].blockWhenValueSubmitted = block.number;
+        BankValueWasSet(_address);
     }
 
     function sendUserValue(uint8 _value) external {
         require(keccak256(_value) == gameRounds[msg.sender].storedUserHash);
+        require(gameRounds[msg.sender].storedUserValue == 0);
 
         gameRounds[msg.sender].storedUserValue = _value;
     }
@@ -98,18 +103,17 @@ contract roulette is owned {
     }
 
     function evaluateBet() external {
-        GameRound memory round = gameRounds[msg.sender];
+        require(gameRounds[msg.sender].storedUserValue != 0);
+        require(gameRounds[msg.sender].storedBankValue != 0);
 
-        require(round.storedUserValue != 0);
-        require(round.storedBankValue != 0);
-
-        uint8 random = round.storedBankValue ^ round.storedUserValue;
+        uint8 random = gameRounds[msg.sender].storedBankValue
+                ^ gameRounds[msg.sender].storedUserValue;
         uint8 number = getRouletteNumber(random);
-        uint256 winningAmount = round.lockedFunds;
+        uint256 winningAmount = gameRounds[msg.sender].lockedFunds;
         address winner;
 
         bool isRed = numberIsRed[number];
-        bool userBet = round.storedUserBet;
+        bool userBet = gameRounds[msg.sender].storedUserBet;
 
         if ((isRed && userBet) || (!isRed && !userBet && number != 0)) {
             winner = msg.sender;

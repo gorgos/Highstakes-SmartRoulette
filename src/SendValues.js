@@ -15,7 +15,7 @@ class SendValues extends React.Component {
 
   render() {
     return (
-      <div className="user-funds" style={{ color: 'white' }}>
+      <div className="user-funds">
         <div>
           <span>Bank Funds: </span>
           <span>{ this.state.bankFunds } ETH</span>

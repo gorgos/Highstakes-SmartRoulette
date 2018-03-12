@@ -9,8 +9,6 @@ import crypto from 'crypto';
 import { ReactSpinner } from 'react-spinning-wheel';
 import 'react-spinning-wheel/dist/style.css';
 
-require('babel-polyfill');
-
 import './jquerykeyframe';
 
 const ROULETTE_NUMBER_ORDER = [26,3,35,12,28,7,29,18,22,9,31,14,20,1,33,16,24,5,10,23,8,30,11
@@ -283,8 +281,6 @@ async function playRoulette(setState, userAddress, roulette, userBet) {
   const bankHash = await $.get(SET_BANK_HASH_ENDPOINT_URL, { userAddress });
   console.log({ bankHash });
 
-  // OPTIONAL: Check if bank hash is set
-
   // STEP 3: Send own value
   console.log('About to send user value');
   setState({ step: 3 });
@@ -297,12 +293,23 @@ async function playRoulette(setState, userAddress, roulette, userBet) {
   const bankValue = await $.get(SEND_BANK_VALUE_ENDPOINT_URL, { bankHash, userAddress });
   console.log({ bankValue });
 
+  const bankValueSetEvent = rouletteInstance.BankValueWasSet({ userAddress });
+  await new Promise((resolve, reject) => {
+    bankValueSetEvent.watch((error, eventResult) => {
+      if (error) { reject(error); }
+
+      console.log({ eventResult });
+      resolve(eventResult);
+    });
+  });
+  bankValueSetEvent.stopWatching();
+
   // STEP 5: Request game evaluation
   console.log('About to evaluate bet');
   setState({ step: 5 });
   await rouletteInstance.evaluateBet({ from: userAddress });
 
-  // TODO DEBUG
+  // TODO Remove DEBUG
   const bankAddress = '0x15ae150d7dC03d3B635EE90b85219dBFe071ED35';
   const registeredBankFunds = (await rouletteInstance.registeredFunds(bankAddress)).toNumber();
   const registeredUserFunds = (await rouletteInstance.registeredFunds(userAddress)).toNumber();
