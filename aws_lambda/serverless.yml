@@ -62,7 +62,7 @@ provider:
 #    - exclude-me-dir/**
 functions:
   sendBankValue:
-    timeout: 200
+    timeout: 30
     handler: sendBankValue.handler
     environment:
       INFURA_API_KEY : ${env:INFURA_API_KEY}
@@ -73,7 +73,7 @@ functions:
           method: get
           cors: false # TODO
   setBankHash:
-    timeout: 200
+    timeout: 30
     handler: setBankHash.handler
     events:
       - http:
