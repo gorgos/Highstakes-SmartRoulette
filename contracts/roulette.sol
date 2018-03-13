@@ -49,10 +49,11 @@ contract roulette is owned {
     function retrieveMoney() external {
         require (registeredFunds[msg.sender] > 0);
 
+        uint256 funds = registeredFunds[msg.sender];
         registeredFunds[msg.sender] = 0;
         FundsChanged(msg.sender);
 
-        msg.sender.transfer(registeredFunds[msg.sender]);
+        msg.sender.transfer(funds);
     }
 
     function placeBet(bool _bet, bytes32 _hash) external payable {
