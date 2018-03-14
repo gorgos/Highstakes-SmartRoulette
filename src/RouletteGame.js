@@ -1,6 +1,5 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import Web3Utils from 'web3-utils';
 import $ from 'jquery';
 import format from 'biguint-format';
 import crypto from 'crypto';
@@ -19,11 +18,26 @@ const SEND_BANK_VALUE_ENDPOINT_URL = AWS_ENDPOINT_URL + 'send';
 class RouletteGame extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { chooseColorHint: false, betValue: 0.1, step: 0 };
+    this.state = {
+      betValue: 0.1,
+      chooseColorHint: false,
+      step: 0,
+      skipBankHashWait: false,
+      skipGameEvaluation: false,
+    };
+
     this._onColorButtonClick = this._onColorButtonClick.bind(this);
     this._onButtonClick = this._onButtonClick.bind(this);
     this._onBetValueChange = this._onBetValueChange.bind(this);
     this._playRoulette = this._playRoulette.bind(this);
+    this._requestBankHash = this._requestBankHash.bind(this);
+    this._waitForBankHash = this._waitForBankHash.bind(this);
+    this._placeBetAndUserValue = this._placeBetAndUserValue.bind(this);
+    this._requestBankValue = this._requestBankValue.bind(this);
+    this._waitForGameEvaluation = this._waitForGameEvaluation.bind(this);
+    this._getRouletteNumber = this._getRouletteNumber.bind(this);
+    this._onSkipBankHashWaitChange = this._onSkipBankHashWaitChange.bind(this);
+    this._onSkipGameEvaluationWait = this._onSkipGameEvaluationWait.bind(this);
     this.setState = this.setState.bind(this);
   }
 
@@ -33,14 +47,42 @@ class RouletteGame extends React.Component {
         <RouletteWheel ref={ wheel => this._wheel = wheel }/>
         <div className="step-overview">
           <ul className="step-list" style={{ display: this.state.step === 0 ? 'none' : '' }}>
-            { this.state.step > 0 && <li>STEP 1: Place bet and set user hash</li> }
-            { this.state.step > 1 && <li>STEP 2: Request server to set hash</li> }
-            { this.state.step > 2 && <li>STEP 3: Send own value</li> }
-            { this.state.step > 3 && <li>STEP 4: Request server to send own value</li> }
-            { this.state.step > 4 && <li>STEP 5: Request game evaluation</li> }
-            { this.state.step > 5 && <li>STEP 6: Get number of evaluation</li> }
+            { this.state.step > 0 && <li>STEP 1: Request bank to commit hash</li> }
+            { this.state.step > 1 &&
+              <li>
+                <b style={{ color: '#e7ff3f' }}>{ this.state.skipBankHashWait ? 'Skipping ':'' }</b>
+                STEP 2: Wait for contract to receive hash
+              </li>
+            }
+            { this.state.step > 2 && <li>STEP 3: Place bet and set user value</li> }
+            { this.state.step > 3 && <li>STEP 4: Request bank to send own value</li> }
+            { this.state.step > 4 &&
+              <li>
+                <b style={{color: '#e7ff3f'}}>{ this.state.skipGameEvaluation ? 'Skipping ':'' }</b>
+                STEP 5: Wait for game evaluation
+              </li>
+            }
+            { this.state.step > 5 && <li>STEP 6: Get Roulette number.. good luck!</li> }
           </ul>
           { this._gameIsLoading() && <ReactSpinner/> }
+        </div>
+        <div className="game-options">
+          <div>
+            <input
+                id="skipBankHashWait"
+                type="checkbox"
+                onChange={ this._onSkipBankHashWaitChange }
+              />
+            <label htmlFor="skipBankHashWait">{' '}Skip waiting for bank hash?</label>
+          </div>
+          <div>
+            <input
+                id="skipGameEvaluationWait"
+                type="checkbox"
+                onChange={ this._onSkipGameEvaluationWait }
+              />
+            <label htmlFor="skipGameEvaluationWait">{' '}Pre-calculate and show game result?</label>
+          </div>
         </div>
         <div className="control">
           <div>
@@ -87,6 +129,14 @@ class RouletteGame extends React.Component {
     );
   }
 
+  _onSkipBankHashWaitChange(e) {
+    this.setState({ skipBankHashWait: e.target.checked });
+  }
+
+  _onSkipGameEvaluationWait(e) {
+    this.setState({ skipGameEvaluation: e.target.checked });
+  }
+
   _gameIsLoading() {
     return this.props.gameState === 'loading';
   }
@@ -118,7 +168,7 @@ class RouletteGame extends React.Component {
         const that = this;
         setTimeout(() => {
           that.props.storeGameState(gameState);
-        }, 8750);
+        }, 9000);
       } catch (e) {
         console.log({ e });
         this.setState({ step: 0 });
@@ -130,67 +180,111 @@ class RouletteGame extends React.Component {
   async _playRoulette(userAddress) {
     const rouletteInstance = await this.props.roulette.deployed();
 
+    const userFunds = (await rouletteInstance.registeredFunds(userAddress)).toNumber();
+    if (userFunds < this.props.web3.toWei(this.state.betValue, 'ether')) {
+      console.log('Please increase your funds!');
+      return;
+    }
+
+    const gameRound = await rouletteInstance.gameRounds(userAddress);
+    let storedBankHash = gameRound[0];
+    let storedUserValue = gameRound[2].toNumber();
+
+    console.log({ storedBankHash, storedUserValue });
+
+    if (storedBankHash === "0x0000000000000000000000000000000000000000000000000000000000000000") {
+      storedBankHash = await this._requestBankHash(rouletteInstance, userAddress); // STEP 1
+      if (!this.state.skipBankHashWait) {
+        await this._waitForBankHash(rouletteInstance, userAddress); // STEP 2
+      }
+    }
+
+    if (storedUserValue === 0) {
+      storedUserValue = await this._placeBetAndUserValue(rouletteInstance, userAddress); // STEP 3
+    }
+
+    // STEP 4
+    const bankValue = await this._requestBankValue(rouletteInstance, userAddress, storedBankHash);
+
+    if (!this.state.skipGameEvaluation) {
+      await this._waitForGameEvaluation(rouletteInstance, userAddress); // STEP 5
+    }
+
+    // STEP 6
+    const number = await this._getRouletteNumber(
+        rouletteInstance,
+        userAddress,
+        bankValue,
+        storedUserValue,
+    );
+
+    return number;
+  }
+
+  async _requestBankHash(rouletteInstance, userAddress) {
+    console.log('STEP 1: Request bank to commit hash');
+    this.setState({ step: 1 });
+    const bankHash = await $.get(SET_BANK_HASH_ENDPOINT_URL, { userAddress });
+    console.log({ bankHash });
+    return bankHash;
+  }
+
+  async _waitForBankHash(rouletteInstance, userAddress) {
+    console.log('STEP 2: Wait for contract to receive hash');
+    this.setState({ step: 2 });
+    const bankHashSetEvent = rouletteInstance.BankHashSet({ userAddress });
+    await waitForEvent(rouletteInstance, bankHashSetEvent);
+    bankHashSetEvent.stopWatching();
+  }
+
+  async _placeBetAndUserValue(rouletteInstance, userAddress) {
     const number = random(1);
     const decNumber = format(number, 'dec');
     const hexNumber = format(number, 'hex');
+    console.log('Numbers:', { decNumber, hexNumber });
 
-    console.log('Numbers:');
-    console.log({ decNumber, hexNumber });
-
-    // STEP 1: Place Bet and set user hash
-    console.log('About to place bet');
-    this.setState({ step: 1 });
+    console.log('STEP 3: Place bet and set user value');
+    this.setState({ step: 3 });
     await rouletteInstance.placeBet(
-      this.state.color, sha(`0x${hexNumber}`),
-      { from: userAddress, value: this.props.web3.toWei(this.state.betValue, 'ether') },
+      this.state.color, decNumber, this.props.web3.toWei(this.state.betValue, 'ether'),
+      { from: userAddress },
     );
 
-    // STEP 2: Request server to set hash
-    console.log('About to request server to set hash');
-    this.setState({ step: 2 });
-    const bankHash = await $.get(SET_BANK_HASH_ENDPOINT_URL, { userAddress });
-    console.log({ bankHash });
+    return decNumber;
+  }
 
-    // STEP 3: Send own value
-    console.log('About to send user value');
-    this.setState({ step: 3 });
-    await rouletteInstance.sendUserValue(decNumber, { from: userAddress });
-
-    // STEP 4: Request server to send own value
-    console.log('About to request server to send bank value');
+  async _requestBankValue(rouletteInstance, userAddress, bankHash) {
+    console.log('STEP 4: Request bank to send own value');
     this.setState({ step: 4 });
-    // TODO remove value
     const bankValue = await $.get(SEND_BANK_VALUE_ENDPOINT_URL, { bankHash, userAddress });
     console.log({ bankValue });
+    return bankValue;
+  }
 
-    // Wait for bank value...
-    const bankValueSetEvent = rouletteInstance.BankValueWasSet({ userAddress });
-    await waitForBankValueSet(rouletteInstance, bankValueSetEvent);
-    bankValueSetEvent.stopWatching();
-
-    // STEP 5: Request game evaluation
-    console.log('About to evaluate bet');
+  async _waitForGameEvaluation(rouletteInstance, userAddress) {
+    console.log('STEP 5: Wait for game evaluation');
     this.setState({ step: 5 });
-    await rouletteInstance.evaluateBet({ from: userAddress });
+    const evaluationFinishedEvent = rouletteInstance.EvaluationFinished({ userAddress });
+    await waitForEvent(rouletteInstance, evaluationFinishedEvent);
+    evaluationFinishedEvent.stopWatching();
+  }
 
-    // TODO Remove DEBUG
-    const bankAddress = '0x15ae150d7dC03d3B635EE90b85219dBFe071ED35';
-    const registeredBankFunds = (await rouletteInstance.registeredFunds(bankAddress)).toNumber();
-    const registeredUserFunds = (await rouletteInstance.registeredFunds(userAddress)).toNumber();
-    console.log({ registeredBankFunds, registeredUserFunds });
-
-    // STEP 6: get number of evaluation
-    console.log('About to get evaluated number');
+  async _getRouletteNumber(rouletteInstance, userAddress, bankValue, storedUserValue) {
+    console.log('STEP 6: Get Roulette number.. good luck!');
     this.setState({ step: 6 });
+
+    if (this.state.skipGameEvaluation) {
+      return Math.round((bankValue ^ storedUserValue) / 7);
+    }
+
     const result = await rouletteInstance.lastRouletteNumbers(userAddress);
-    console.log({ result });
     return result.toNumber();
   }
 }
 
-function waitForBankValueSet(rouletteInstance, bankValueSetEvent) {
+function waitForEvent(rouletteInstance, event) {
   return new Promise((resolve, reject) => {
-    bankValueSetEvent.watch((error, eventResult) => {
+    event.watch((error, eventResult) => {
       if (error) { reject(error); }
 
       console.log({ eventResult });
@@ -209,10 +303,6 @@ const mapStateToProps = state => {
 
 function random(qty) {
   return crypto.randomBytes(qty);
-}
-
-function sha(number) {
-  return Web3Utils.sha3(number);
 }
 
 const mapDispatchToProps = dispatch => {

@@ -8,7 +8,7 @@ class BankAndUserFunds extends React.Component {
     this.state = {
       bankFunds: '',
       userFunds: '',
-      showOldState: {},
+      newState: {},
     };
 
     this._checkForExistingWeb3 = this._checkForExistingWeb3.bind(this);
@@ -20,11 +20,11 @@ class BankAndUserFunds extends React.Component {
       <div className="user-funds">
         <div>
           <span>Bank Funds: </span>
-          <span>{ this._stateToShow().bankFunds } ETH</span>
+          <span>{ this.state.bankFunds } ETH</span>
         </div>
         <div>
           <span>User Funds: </span>
-          <span>{ this._stateToShow().userFunds } ETH</span>
+          <span>{ this.state.userFunds } ETH</span>
         </div>
       </div>
     );
@@ -34,12 +34,14 @@ class BankAndUserFunds extends React.Component {
     this._checkForExistingWeb3();
   }
 
-  _stateToShow() {
-    if (this.state.showOldState.length > 0 && this.props.gameState === 'loading') {
-      return this.state.showOldState;
+  componentWillReceiveProps(nextProps) {
+    if (this.props.gameState === 'loading' && nextProps.gameState !== 'loading') {
+      this.setState(this.state.newState);
     }
+  }
 
-    return this.state;
+  _isNewStateEmpty() {
+    return (Object.keys(this.state.newState).length === 0);
   }
 
   _checkForExistingWeb3() {
@@ -70,17 +72,19 @@ class BankAndUserFunds extends React.Component {
       fundsChanged.watch(async (error, result) => {
         if (error) { console.log(error); }
         else {
-          console.log({ result });
-          const balance =  await rouletteInstance.registeredFunds(result.args._address);
+          const balanceResult =  await rouletteInstance.registeredFunds(result.args._address);
           const state = {};
           const stateKey = result.args._address === bankAddress ? 'bankFunds' : 'userFunds';
-          state[stateKey] = balance.toNumber() / 10e17;
-          if (this.props.gameState !== 'loading') { this.setState(state); }
-          else {
-            this.setState(Object.assign(state, { showOldState: this.state }));
-            const that = this;
-            setTimeout(() => that.setState({ showOldState: {} }), 10500);
+          const balance = balanceResult.toNumber() / 10e17;
+          state[stateKey] = balance;
+
+          if (this.props.gameState !== 'loading' || balance <= this.state[stateKey]) {
+            // game is not loading OR it was only the first update event -> update funds
+            this.setState(state);
           }
+
+          state.newState = {};
+          this.setState(Object.assign({ newState: state }));
         }
       });
     });

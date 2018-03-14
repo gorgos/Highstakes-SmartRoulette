@@ -7,9 +7,49 @@
     margin-left: 20px;
 }
 
+.game-options {
+    color: white;
+}
+
 .no-metamask {
     color: white;
+}
 
+.increase-money-input {
+    font-size: 15pt;
+    position: absolute;
+    right: 0;
+    width: 8em;
+    height: 3em;
+    text-align: center;
+    cursor: pointer;
+    line-height: 3em;
+    border-radius: 1em;
+    margin: .2em;
+    float: left;
+    box-shadow: 0 0 1em #333;
+    border-bottom: solid .1em rgba(0, 0, 0, 1);
+    margin-right: 380px;
+    margin-top: -55px;
+}
+
+.increase-money {
+    font-size: 15pt;
+    position: absolute;
+    right: 0;
+    width: 8em;
+    height: 3em;
+    color: #FFF;
+    text-align: center;
+    cursor: pointer;
+    line-height: 3em;
+    border-radius: 1em;
+    margin: .2em;
+    float: left;
+    box-shadow: 0 0 1em #333;
+    border-bottom: solid .1em rgba(0, 0, 0, 1);
+    margin-right: 200px;
+    margin-top: -55px;
 }
 
 .retrieve-money {

@@ -4,21 +4,53 @@ import { connect } from 'react-redux';
 class RetrieveMoney extends React.Component {
   constructor(props) {
     super(props);
-    this._onButtonClick = this._onButtonClick.bind(this);
+
+    this.state = { input: 0 };
+    this._onInputChange = this._onInputChange.bind(this);
+    this._onIncreaseClick = this._onIncreaseClick.bind(this);
+    this._onWithdrawClick = this._onWithdrawClick.bind(this);
   }
 
   render() {
     return (
-      <div
-          className="retrieve-money redbg"
-          onClick={ this._onButtonClick }
-        >
-        Retrieve Money
+      <div>
+        <input
+            className="increase-money-input"
+            type="number"
+            onChange={ this._onInputChange }
+            value={ this.state.input }
+          />
+        <div
+            className="increase-money redbg"
+            onClick={ this._onIncreaseClick }
+          >
+          Increase Funds
+        </div>
+        <div
+            className="retrieve-money redbg"
+            onClick={ this._onWithdrawClick }
+          >
+          Withdraw Funds
+        </div>
       </div>
     );
   }
 
-  _onButtonClick() {
+  _onInputChange(e) {
+    this.setState({ input: e.target.value });
+  }
+
+  _onIncreaseClick() {
+    if (this.props.gameState === 'loading') { return; }
+
+    this.props.web3.eth.getAccounts(async (error, accounts) => {
+      const rouletteInstance = await this.props.roulette.deployed();
+      const increaseValue = this.props.web3.toWei(this.state.input, 'ether');
+      await rouletteInstance.increaseFunds({ from: accounts[0], value: increaseValue });
+    });
+  }
+
+  _onWithdrawClick() {
     if (this.props.gameState === 'loading') { return; }
 
     this.props.web3.eth.getAccounts(async (error, accounts) => {
