@@ -95,13 +95,13 @@ contract roulette is owned {
         gameRounds[msg.sender].storedUserValue = _value;
     }
 
-    function checkBankValueTimeout() external onlyOwner {
-        require(block.number > (gameRounds[msg.sender].blockWhenValueSubmitted + 1000));
+    function checkBankValueTimeout() external {
+        require(block.number > (gameRounds[msg.sender].blockWhenValueSubmitted + 10000));
         require(gameRounds[bankAddress].storedBankHash == 0);
 
         registeredFunds[msg.sender] += gameRounds[msg.sender].lockedFunds;
-        FundsChanged(bankAddress);
-        resetContractFor(_address);
+        FundsChanged(msg.sender);
+        resetContractFor(msg.sender);
     }
 
     function evaluateBet(address _address) private {
