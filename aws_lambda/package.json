@@ -12,6 +12,7 @@
   "license": "MIT",
   "dependencies": {
     "biguint-format": "^1.0.0",
+    "google-recaptcha": "^1.1.0",
     "https": "^1.0.0",
     "truffle-hdwallet-provider": "0.0.3",
     "web3": "^0.20.5",

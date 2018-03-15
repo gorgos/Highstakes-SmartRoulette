@@ -25,47 +25,57 @@ module.exports.handler = (event, context, callback) => {
   const userAddress = queryParameter ? queryParameter['userAddress'] : event.userAddress;
   const bankHash = queryParameter ? queryParameter['bankHash'] : event.bankHash;
 
-  const etherUrl = `https://${NETWORK_NAME}.infura.io/${process.env.INFURA_API_KEY}`;
-  const web3 = new Web3(new Web3.providers.HttpProvider(etherUrl));
-  const rouletteInstance = web3.eth.contract(abi).at(CONTRACT_ADDRESS);
+  const captcha = new googleRecaptcha({ secret: process.env.CAPTCHA_KEY });
+  const captchaResponse = queryParameter ? queryParameter['captcha'] : event.captcha;
+  captcha.verify({ response: captchaResponse }, error => {
+    if (error) { returnFail(context, error); }
 
-  const itemKey = `testOn${NETWORK_NAME}/${userAddress}/${bankHash}`;
-  console.log({ itemKey });
+    const etherUrl = `https://${NETWORK_NAME}.infura.io/${process.env.INFURA_API_KEY}`;
+    const web3 = new Web3(new Web3.providers.HttpProvider(etherUrl));
+    const rouletteInstance = web3.eth.contract(abi).at(CONTRACT_ADDRESS);
 
-  s3.getObject({ Bucket: BUCKET, Key: itemKey }, (error, result) => {
-    if (error) {
-      console.log({ error });
-      returnFail(context, error);
-    } else {
-      const value = result.Body.toString();
-      process.chdir('/tmp');
-      const data = rouletteInstance.sendBankValue.getData(value, userAddress, {from: BANK_ADDRESS});
-      const gasPrice = 9;
-      const gasLimit = 3000000;
+    const itemKey = `testOn${NETWORK_NAME}/${userAddress}/${bankHash}`;
+    console.log({ itemKey });
 
-      const rawTransaction = {
-        "from": BANK_ADDRESS,
-        "nonce": web3.eth.getTransactionCount(BANK_ADDRESS),
-        "gasPrice": web3.toHex(gasPrice * 1e9),
-        "gasLimit": web3.toHex(gasLimit),
-        "to": CONTRACT_ADDRESS,
-        "value": "0x00",
-        "data": data,
-        "chainId": NETWORK_IDS[NETWORK_NAME],
-      };
+    s3.getObject({ Bucket: BUCKET, Key: itemKey }, (error, result) => {
+      if (error) {
+        console.log({ error });
+        returnFail(context, error);
+      } else {
+        const value = result.Body.toString();
+        process.chdir('/tmp');
+        const data = rouletteInstance.sendBankValue.getData(
+          value,
+          userAddress,
+          { from: BANK_ADDRESS },
+        );
+        const gasPrice = 9;
+        const gasLimit = 3000000;
 
-      const privateKey = process.env.PRIVATE_KEY;
-      const privKey = new Buffer(privateKey, 'hex');
-      const tx = new Tx(rawTransaction);
+        const rawTransaction = {
+          "from": BANK_ADDRESS,
+          "nonce": web3.eth.getTransactionCount(BANK_ADDRESS),
+          "gasPrice": web3.toHex(gasPrice * 1e9),
+          "gasLimit": web3.toHex(gasLimit),
+          "to": CONTRACT_ADDRESS,
+          "value": "0x00",
+          "data": data,
+          "chainId": NETWORK_IDS[NETWORK_NAME],
+        };
 
-      tx.sign(privKey);
-      const serializedTx = tx.serialize();
+        const privateKey = process.env.PRIVATE_KEY;
+        const privKey = new Buffer(privateKey, 'hex');
+        const tx = new Tx(rawTransaction);
 
-      web3.eth.sendRawTransaction('0x' + serializedTx.toString('hex'), (error, hash) => {
-        if (!error) { returnSucceed(context, value); /* TODO remove value */}
-        else { returnFail(context, error); }
-      });
-    }
+        tx.sign(privKey);
+        const serializedTx = tx.serialize();
+
+        web3.eth.sendRawTransaction('0x' + serializedTx.toString('hex'), (error, hash) => {
+          if (!error) { returnSucceed(context, value); /* TODO remove value */}
+          else { returnFail(context, error); }
+        });
+      }
+    });
   });
 };
 

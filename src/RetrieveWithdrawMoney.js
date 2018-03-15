@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-class RetrieveMoney extends React.Component {
+class RetrieveWithdrawMoney extends React.Component {
   constructor(props) {
     super(props);
 
@@ -68,4 +68,4 @@ const mapStateToProps = state => {
   };
 }
 
-export default connect(mapStateToProps)(RetrieveMoney);
+export default connect(mapStateToProps)(RetrieveWithdrawMoney);
