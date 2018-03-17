@@ -12,6 +12,8 @@ import 'react-rangeslider/lib/index.css';
 import { ReactSpinner } from 'react-spinning-wheel';
 import 'react-spinning-wheel/dist/style.css';
 
+import bigInt from "big-integer";
+
 const AWS_ENDPOINT_URL = 'https://kxeix65tni.execute-api.us-east-1.amazonaws.com/dev/';
 const SET_BANK_HASH_ENDPOINT_URL = AWS_ENDPOINT_URL + 'set';
 const SEND_BANK_VALUE_ENDPOINT_URL = AWS_ENDPOINT_URL + 'send';
@@ -68,6 +70,13 @@ class RouletteGame extends React.Component {
           </ul>
           { this._gameIsLoading() && <ReactSpinner/> }
         </div>
+        <ReCAPTCHA
+            className="google-captcha-custom"
+            sitekey="6Lf69kwUAAAAAFQ-RapYCLD4h3mCAUQXCiw0rLP0"
+            onChange={ captchaResponse => this.setState({ captchaResponse }) }
+            theme="dark"
+            size="normal"
+          />
         <div className="game-options">
           <div>
             <input
@@ -115,12 +124,6 @@ class RouletteGame extends React.Component {
               >
               Spin
             </div>
-            <ReCAPTCHA
-                sitekey="6Lct9kwUAAAAADmFzu2nG0avAbXmxk2E-DcVOeS8"
-                onChange={ value => this.setState({ captchaResponse: value }) }
-                theme="dark"
-                size="invisible"
-              />
             <b>{`Current bet amount: ${this.state.betValue} ETH`}</b>
             { this.state.chooseColorHint &&
               <span><br /><b style={{ color: '#e7ff3f' }}>Please choose color first.</b></span>
@@ -190,9 +193,11 @@ class RouletteGame extends React.Component {
 
     const userFunds = (await rouletteInstance.registeredFunds(userAddress)).toNumber();
     if (userFunds < this.props.web3.toWei(this.state.betValue, 'ether')) {
-      console.log('Please increase your funds!');
-      return;
+      throw new Error('Please increase your funds!');
     }
+
+    const captcha = this.state.captchaResponse;
+    if (!captcha) { throw new Error('Please fill in captcha!'); }
 
     const bankAddress = await rouletteInstance.bankAddress();
     const bankFunds = await rouletteInstance.registeredFunds(bankAddress);
@@ -204,18 +209,19 @@ class RouletteGame extends React.Component {
 
     const gameRound = await rouletteInstance.gameRounds(userAddress);
     let storedBankHash = gameRound[0];
-    let storedUserValue = gameRound[2].toNumber();
+    let storedUserValue = gameRound[2].toString();
 
     console.log({ storedBankHash, storedUserValue });
 
     if (storedBankHash === "0x0000000000000000000000000000000000000000000000000000000000000000") {
-      storedBankHash = await this._requestBankHash(rouletteInstance, userAddress); // STEP 1
+      // STEP 1
+      storedBankHash = await this._requestBankHash(rouletteInstance, userAddress, captcha);
       if (!this.state.skipBankHashWait) {
         await this._waitForBankHash(rouletteInstance, userAddress); // STEP 2
       }
     }
 
-    if (storedUserValue === 0) {
+    if (storedUserValue === '0') {
       storedUserValue = await this._placeBetAndUserValue(rouletteInstance, userAddress); // STEP 3
     }
 
@@ -237,10 +243,9 @@ class RouletteGame extends React.Component {
     return number;
   }
 
-  async _requestBankHash(rouletteInstance, userAddress) {
+  async _requestBankHash(rouletteInstance, userAddress, captcha) {
     console.log('STEP 1: Request bank to commit hash');
     this.setState({ step: 1 });
-    const captcha = this.state.captchaResponse;
     const bankHash = await $.get(SET_BANK_HASH_ENDPOINT_URL, { userAddress, captcha });
     console.log({ bankHash });
     return bankHash;
@@ -255,10 +260,9 @@ class RouletteGame extends React.Component {
   }
 
   async _placeBetAndUserValue(rouletteInstance, userAddress) {
-    const number = random(1);
+    const number = random(32);
     const decNumber = format(number, 'dec');
-    const hexNumber = format(number, 'hex');
-    console.log('Numbers:', { decNumber, hexNumber });
+    console.log({ decNumber });
 
     console.log('STEP 3: Place bet and set user value');
     this.setState({ step: 3 });
@@ -273,11 +277,7 @@ class RouletteGame extends React.Component {
   async _requestBankValue(rouletteInstance, userAddress, bankHash) {
     console.log('STEP 4: Request bank to send own value');
     this.setState({ step: 4 });
-    const captcha = this.state.captchaResponse;
-    const bankValue = await $.get(
-      SEND_BANK_VALUE_ENDPOINT_URL,
-      { bankHash, userAddress, captcha },
-    );
+    const bankValue = await $.get(SEND_BANK_VALUE_ENDPOINT_URL, { bankHash, userAddress });
     console.log({ bankValue });
     return bankValue;
   }
@@ -295,7 +295,7 @@ class RouletteGame extends React.Component {
     this.setState({ step: 6 });
 
     if (this.state.skipGameEvaluation) {
-      return Math.round((bankValue ^ storedUserValue) / 7);
+      return bigInt(bankValue).xor(storedUserValue).mod(37).toJSNumber();
     }
 
     const result = await rouletteInstance.lastRouletteNumbers(userAddress);

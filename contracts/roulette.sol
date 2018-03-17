@@ -15,10 +15,10 @@ contract roulette is owned {
     struct GameRound {
         // bank
         bytes32 storedBankHash;
-        uint8 storedBankValue;
+        uint256 storedBankValue;
 
         // user
-        uint8 storedUserValue;
+        uint256 storedUserValue;
 
         // game
         bool storedUserBet;
@@ -31,7 +31,7 @@ contract roulette is owned {
     event EvaluationFinished(address userAddress);
 
     mapping (address => GameRound) public gameRounds;
-    mapping (address => uint8) public lastRouletteNumbers;
+    mapping (address => uint256) public lastRouletteNumbers;
     mapping (address => uint256) public registeredFunds;
 
     bool[37] numberIsRed = [false, true, false, true, false, true, false, true, false, true, false, false, true, false, true, false, true, false, true, true, false, true, false, true, false, true, false, true, false, false, true, false, true, false, true, false, true];
@@ -56,7 +56,7 @@ contract roulette is owned {
         msg.sender.transfer(funds);
     }
 
-    function placeBet(bool _bet, uint8 _value, uint256 _betAmount) external {
+    function placeBet(bool _bet, uint256 _value, uint256 _betAmount) external {
         require(_value != 0);
         require(registeredFunds[bankAddress] >= _betAmount);
         require(registeredFunds[msg.sender] >= _betAmount);
@@ -78,7 +78,7 @@ contract roulette is owned {
         BankHashSet(_address);
     }
 
-    function sendBankValue(uint8 _value, address _address) external onlyOwner {
+    function sendBankValue(uint256 _value, address _address) external onlyOwner {
         require(keccak256(_value) == gameRounds[_address].storedBankHash);
         require(gameRounds[_address].storedUserValue != 0);
         require(gameRounds[_address].storedBankValue == 0);
@@ -89,7 +89,7 @@ contract roulette is owned {
         evaluateBet(_address);
     }
 
-    function sendUserValue(uint8 _value) external {
+    function sendUserValue(uint256 _value) external {
         require(gameRounds[msg.sender].storedBankHash != 0);
 
         gameRounds[msg.sender].storedUserValue = _value;
@@ -105,8 +105,8 @@ contract roulette is owned {
     }
 
     function evaluateBet(address _address) private {
-        uint8 random = gameRounds[_address].storedBankValue ^ gameRounds[_address].storedUserValue;
-        uint8 number = getRouletteNumber(random);
+        uint256 random = gameRounds[_address].storedBankValue ^ gameRounds[_address].storedUserValue;
+        uint256 number = getRouletteNumber(random);
         uint256 winningAmount = gameRounds[_address].lockedFunds;
         address winner;
 
@@ -127,14 +127,11 @@ contract roulette is owned {
         EvaluationFinished(_address);
     }
 
-    function debugShowHashForValue(uint8 _value) external pure returns (bytes32) {
+    function debugShowHashForValue(uint256 _value) external pure returns (bytes32) {
         return keccak256(_value);
     }
 
-    function getRouletteNumber(uint8 _random) public pure returns (uint8) {
-        // TODO public -> private
-        // uint256 max = 2**256 - 1;
-        uint8 numberDistance = 7; // uint256: max / 37;
-        return _random / numberDistance; // or just modulo 37
+    function getRouletteNumber(uint256 _random) private pure returns (uint8) {
+        return uint8(_random % 37);
     }
 }

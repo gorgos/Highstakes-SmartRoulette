@@ -7,6 +7,14 @@
     margin-left: 20px;
 }
 
+.google-captcha-custom {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    margin-right: 0;
+    margin-bottom: 45px;
+}
+
 .game-options {
     color: white;
 }
