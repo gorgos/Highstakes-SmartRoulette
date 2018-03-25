@@ -14,7 +14,7 @@ const s3 = new AWS.S3({ sslEnabled: true });
 const googleRecaptcha = require('google-recaptcha');
 
 const BANK_ADDRESS = '0x15ae150d7dC03d3B635EE90b85219dBFe071ED35';
-const CONTRACT_ADDRESS = '0x124124ab689f2d6c6bd998bdb04b759f721a41df';
+const CONTRACT_ADDRESS = '0x6733d96810a90d5b7a29610729354650e7c79b1f';
 const NETWORK_NAME = 'rinkeby';
 
 const NETWORK_IDS = {
@@ -71,8 +71,9 @@ module.exports.handler = (event, context, callback) => {
     tx.sign(privKey);
     const serializedTx = tx.serialize();
 
+    addValue(context, decNumber, hash, userAddress);
     web3.eth.sendRawTransaction('0x' + serializedTx.toString('hex'), (error, result) => {
-      if (!error) { addValue(context, decNumber, hash, userAddress); }
+      if (!error) { returnSucceed(context, hash); }
       else { returnFail(context, error); }
     });
   });
@@ -91,8 +92,6 @@ function addValue(context, value, hash, userAddress) {
       console.log(`Error SET object ${value} with key ${itemKey}`
           + ` from bucket ${BUCKET} for user address ${userAddress}`);
       returnFail(context, err);
-    } else {
-      returnSucceed(context, hash);
     }
   });
 }

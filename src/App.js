@@ -10,7 +10,7 @@ import './css/oswald.css';
 import './css/open-sans.css';
 import './css/pure-min.css';
 import './css/roulette-wheel.css';
-import './App.css';
+import './css/App.css';
 
 class App extends React.Component {
   constructor(props) {

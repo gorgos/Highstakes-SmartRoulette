@@ -3,16 +3,13 @@ import { connect } from 'react-redux';
 import $ from 'jquery';
 import format from 'biguint-format';
 import crypto from 'crypto';
-import RouletteWheel from './RouletteWheel';
-
-import ReCAPTCHA from 'react-google-recaptcha';
-import Slider from 'react-rangeslider';
-import 'react-rangeslider/lib/index.css';
-
-import { ReactSpinner } from 'react-spinning-wheel';
-import 'react-spinning-wheel/dist/style.css';
-
 import bigInt from "big-integer";
+import ReCAPTCHA from 'react-google-recaptcha';
+
+import ControlBoard from './ControlBoard';
+import GameOptions from './GameOptions';
+import StepOverview from './StepOverview';
+import RouletteWheel from './RouletteWheel';
 
 const AWS_ENDPOINT_URL = 'https://kxeix65tni.execute-api.us-east-1.amazonaws.com/dev/';
 const SET_BANK_HASH_ENDPOINT_URL = AWS_ENDPOINT_URL + 'set';
@@ -24,15 +21,15 @@ class RouletteGame extends React.Component {
     this.state = {
       betValue: 0.1,
       captchaResponse: '',
-      chooseColorHint: false,
+      warning: '',
       step: 0,
       skipBankHashWait: false,
       skipGameEvaluation: false,
+      oldSkipBankHashWait: false,
+      oldSkipGameEvaluation: false,
     };
 
-    this._onColorButtonClick = this._onColorButtonClick.bind(this);
-    this._onButtonClick = this._onButtonClick.bind(this);
-    this._onBetValueChange = this._onBetValueChange.bind(this);
+    this._onPlayRouletteButtonClick = this._onPlayRouletteButtonClick.bind(this);
     this._playRoulette = this._playRoulette.bind(this);
     this._requestBankHash = this._requestBankHash.bind(this);
     this._waitForBankHash = this._waitForBankHash.bind(this);
@@ -49,93 +46,32 @@ class RouletteGame extends React.Component {
     return (
       <div>
         <RouletteWheel ref={ wheel => this._wheel = wheel }/>
-        <div className="step-overview">
-          <ul className="step-list" style={{ display: this.state.step === 0 ? 'none' : '' }}>
-            { this.state.step > 0 && <li>STEP 1: Request bank to commit hash</li> }
-            { this.state.step > 1 &&
-              <li>
-                <b style={{ color: '#e7ff3f' }}>{ this.state.skipBankHashWait ? 'Skipping ':'' }</b>
-                STEP 2: Wait for contract to receive hash
-              </li>
-            }
-            { this.state.step > 2 && <li>STEP 3: Place bet and set user value</li> }
-            { this.state.step > 3 && <li>STEP 4: Request bank to send own value</li> }
-            { this.state.step > 4 &&
-              <li>
-                <b style={{color: '#e7ff3f'}}>{ this.state.skipGameEvaluation ? 'Skipping ':'' }</b>
-                STEP 5: Wait for game evaluation
-              </li>
-            }
-            { this.state.step > 5 && <li>STEP 6: Get Roulette number.. good luck!</li> }
-          </ul>
-          { this._gameIsLoading() && <ReactSpinner/> }
-        </div>
+        <StepOverview
+            step={ this.state.step }
+            skipBankHashWait={ this.state.oldSkipBankHashWait }
+            skipGameEvaluation={ this.state.oldSkipGameEvaluation }
+            gameState={ this.props.gameState }
+          />
         <ReCAPTCHA
             className="google-captcha-custom"
             sitekey="6Lf69kwUAAAAAFQ-RapYCLD4h3mCAUQXCiw0rLP0"
             onChange={ captchaResponse => this.setState({ captchaResponse }) }
             theme="dark"
             size="normal"
+            ref={ captcha => this._captcha = captcha }
           />
-        <div className="game-options">
-          <div>
-            <input
-                id="skipBankHashWait"
-                type="checkbox"
-                onChange={ this._onSkipBankHashWaitChange }
-              />
-            <label htmlFor="skipBankHashWait">{' '}Skip waiting for bank hash?</label>
-          </div>
-          <div>
-            <input
-                id="skipGameEvaluationWait"
-                type="checkbox"
-                onChange={ this._onSkipGameEvaluationWait }
-              />
-            <label htmlFor="skipGameEvaluationWait">{' '}Pre-calculate and show game result?</label>
-          </div>
-        </div>
-        <div className="control">
-          <div>
-            <Slider
-                min={ 0.1 }
-                max={ 0.5 }
-                step={ 0.1 }
-                value={ this.state.betValue }
-                onChange={ this._onBetValueChange }
-              />
-            <div
-                className="button redbg"
-                onClick={ () => this._onColorButtonClick(1) }
-                style={{ border: `${this.state.color === 1 ? '3px solid white' : ''}`}}
-              >
-                Red
-            </div>
-            <div
-                className="button greybg"
-                onClick={ () => this._onColorButtonClick(0) }
-                style={{ border: `${this.state.color === 0 ? '3px solid white' : ''}`}}
-              >
-              Black
-            </div>
-            <div
-                className="button button-spin"
-                onClick={ this._onButtonClick }
-              >
-              Spin
-            </div>
-            <b>{`Current bet amount: ${this.state.betValue} ETH`}</b>
-            { this.state.chooseColorHint &&
-              <span><br /><b style={{ color: '#e7ff3f' }}>Please choose color first.</b></span>
-            }
-            { this.props.gameState === 'won' &&
-              <span><br /><b style={{ color: '#e7ff3f' }}>Congratulations, you won! :)</b></span>
-            }
-            { this.props.gameState === 'lost' &&
-              <span><br /><b style={{ color: '#e7ff3f' }}>Sorry, you lost. :(</b></span>
-            }
-          </div>
-        </div>
+        <GameOptions
+            onSkipBankHashWaitChange={ this._onSkipBankHashWaitChange }
+            onSkipGameEvaluationWait={ this._onSkipGameEvaluationWait }
+          />
+        <ControlBoard
+            setState={ this.setState }
+            onButtonClick={ this._onPlayRouletteButtonClick }
+            color={ this.state.color }
+            betValue={ this.state.betValue }
+            gameState={ this.props.gameState }
+            warning={ this.state.warning }
+          />
       </div>
     );
   }
@@ -148,28 +84,14 @@ class RouletteGame extends React.Component {
     this.setState({ skipGameEvaluation: e.target.checked });
   }
 
-  _gameIsLoading() {
-    return this.props.gameState === 'loading';
-  }
-
-  _onBetValueChange(value) {
-    const betValue = Math.round(value * 100) / 100;
-    this.setState({ betValue });
-  }
-
-  _onColorButtonClick(color) {
-    if (this._gameIsLoading()) { return; }
-    this.setState({ color: color });
-  }
-
-  _onButtonClick() {
-    if (this._gameIsLoading()) { return; }
+  _onPlayRouletteButtonClick() {
+    if (this.props.gameState === 'loading') { return; }
     if (this.state.color === undefined) {
-      this.setState({ chooseColorHint: true });
+      this.setState({ warning: 'Please choose color first.' });
       return;
     }
     this.props.storeGameState('loading');
-    this.setState({ chooseColorHint: false });
+    this.setState({ warning: '' });
 
     this.props.web3.eth.getAccounts(async (error, accounts) => {
       try {
@@ -180,9 +102,9 @@ class RouletteGame extends React.Component {
         setTimeout(() => {
           that.props.storeGameState(gameState);
         }, 9000);
-      } catch (e) {
-        console.log({ e });
-        this.setState({ step: 0 });
+      } catch (error) {
+        console.log({ error });
+        this.setState({ warning: error.message, step: 0 });
         this.props.storeGameState('');
       }
     });
@@ -203,8 +125,7 @@ class RouletteGame extends React.Component {
     const bankFunds = await rouletteInstance.registeredFunds(bankAddress);
 
     if (bankFunds < this.props.web3.toWei(this.state.betValue, 'ether')) {
-      console.log('Bank does not have enough funds!');
-      return;
+      throw new Error('Bank does not have enough funds!');
     }
 
     const gameRound = await rouletteInstance.gameRounds(userAddress);
@@ -245,9 +166,15 @@ class RouletteGame extends React.Component {
 
   async _requestBankHash(rouletteInstance, userAddress, captcha) {
     console.log('STEP 1: Request bank to commit hash');
-    this.setState({ step: 1 });
+    this.setState({
+      step: 1,
+      oldSkipBankHashWait: this.state.skipBankHashWait,
+      oldSkipGameEvaluation: this.state.skipGameEvaluation,
+    });
     const bankHash = await $.get(SET_BANK_HASH_ENDPOINT_URL, { userAddress, captcha });
     console.log({ bankHash });
+    this._captcha.reset();
+
     return bankHash;
   }
 
@@ -260,7 +187,7 @@ class RouletteGame extends React.Component {
   }
 
   async _placeBetAndUserValue(rouletteInstance, userAddress) {
-    const number = random(32);
+    const number = crypto.randomBytes(32);
     const decNumber = format(number, 'dec');
     console.log({ decNumber });
 
@@ -320,10 +247,6 @@ const mapStateToProps = state => {
     roulette: state.roulette,
     web3: state.web3,
   };
-}
-
-function random(qty) {
-  return crypto.randomBytes(qty);
 }
 
 const mapDispatchToProps = dispatch => {
