@@ -1,5 +1,4 @@
 require('babel-polyfill');
-const Web3Utils = require('web3-utils');
 const Roulette = artifacts.require("./roulette.sol");
 
 contract('Roulette', accounts => {
@@ -7,11 +6,6 @@ contract('Roulette', accounts => {
 
   beforeEach('setup contract', async () => {
     rouletteInstance = await Roulette.deployed();
-  });
-
-  it("should calculate a Roulette number.", async () => {
-    const number = await rouletteInstance.getRouletteNumber(145, { from: accounts[0] });
-    assert.equal(number.toNumber(), 20, "The roulette number isn't properly calculated.");
   });
 
   describe('betting on a color', () => {
@@ -27,21 +21,22 @@ function itShouldProperlyEvaluate(accounts, userBet, result) {
     let rouletteInstance, bankAccount, userAccount;
 
     beforeEach('setup contract and place bet', async () => {
-      const { userValue, bankValue, userHash, bankHash } = result ? redValues() : blackValues();
+      const { userValue, bankValue } = result ? redValues() : blackValues();
       rouletteInstance = await Roulette.deployed();
       bankAccount = accounts[0];
       userAccount = accounts[1];
+      const bankHash = await rouletteInstance.debugShowHashForValue(bankValue);
+
       try { await rouletteInstance.retrieveMoney({ from: bankAccount }); } catch(e) {}
       try { await rouletteInstance.retrieveMoney({ from: userAccount }); } catch(e) {}
-      await rouletteInstance.increaseBankFunds({ from: bankAccount, value: 100 });
-      await rouletteInstance.placeBet(userBet, userHash, { from: userAccount, value: 10 });
+      await rouletteInstance.increaseFunds({ from: bankAccount, value: 100 });
+      await rouletteInstance.increaseFunds({ from: userAccount, value: 10 });
       await rouletteInstance.setBankHash(bankHash, userAccount, { from: bankAccount });
-      await rouletteInstance.sendUserValue(userValue, { from: userAccount });
+      await rouletteInstance.placeBet(userBet, userValue, 10, { from: userAccount });
       await rouletteInstance.sendBankValue(bankValue, userAccount, { from: bankAccount });
     });
 
     it("should evaluate the bet properly.", async () => {
-      const number = await rouletteInstance.evaluateBet({ from: userAccount });
       const registeredBankFunds = (await rouletteInstance.registeredFunds(bankAccount)).toNumber();
       const registeredUserFunds = (await rouletteInstance.registeredFunds(userAccount)).toNumber();
 
@@ -55,25 +50,17 @@ function itShouldProperlyEvaluate(accounts, userBet, result) {
 }
 
 function redValues() {
-  // 238 xor 123 = 149 => 21 (red)
+  // (238 xor 123) % 37 = 1 (red)
   return {
     userValue: 238,
     bankValue: 123,
-    userHash: sha('0xee'),
-    bankHash: sha('0x7B'),
   };
 }
 
 function blackValues() {
-  // 234 xor 123 = 145 => 20 (black)
+  // (235 xor 123) % 37 = 33 (black)
   return {
-    userValue: 234,
+    userValue: 235,
     bankValue: 123,
-    userHash: sha('0xea'),
-    bankHash: sha('0x7B'),
   };
-}
-
-function sha(number) {
-  return Web3Utils.sha3(number);
 }
