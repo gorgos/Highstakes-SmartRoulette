@@ -1,4 +1,4 @@
-# RouletteContract
+# High-stakes Smart Roulette
 Smart Contract, AWS Lambda and React App for securely playing Roulette.
 
 ## The problem with randomness in smart contracts
