@@ -45,6 +45,7 @@ class BankAndUserFunds extends React.Component {
   }
 
   _checkForExistingWeb3() {
+    // should probably go into componentWillReceiveProps
     if (!this.props.web3) {
       setTimeout(this._checkForExistingWeb3, 1000);
     } else {
@@ -70,7 +71,7 @@ class BankAndUserFunds extends React.Component {
       const userAddress = accounts[0];
       const fundsChanged = rouletteInstance.FundsChanged({ address: [bankAddress, userAddress] });
       fundsChanged.watch(async (error, result) => {
-        if (error) { console.log(error); }
+        if (error) { console.log({ error }); }
         else {
           const balanceResult =  await rouletteInstance.registeredFunds(result.args._address);
           const state = {};
@@ -81,10 +82,10 @@ class BankAndUserFunds extends React.Component {
           if (this.props.gameState !== 'loading' || balance <= this.state[stateKey]) {
             // game is not loading OR it was only the first update event -> update funds
             this.setState(state);
+          } else {
+            state.newState = {};
+            this.setState(Object.assign({ newState: state }));
           }
-
-          state.newState = {};
-          this.setState(Object.assign({ newState: state }));
         }
       });
     });

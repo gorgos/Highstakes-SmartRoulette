@@ -161,7 +161,7 @@ class RouletteGame extends React.Component {
     });
     const bankHash = await $.get(SET_BANK_HASH_ENDPOINT_URL, { userAddress, captcha });
     console.log({ bankHash });
-    this.board._captcha.reset();
+    this._board._captcha.reset();
 
     return bankHash;
   }
