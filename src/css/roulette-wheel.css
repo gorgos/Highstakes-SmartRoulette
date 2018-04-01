@@ -8,11 +8,8 @@
 }
 
 .google-captcha-custom {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    margin-right: 0;
-    margin-bottom: 45px;
+    position: relative;
+    margin-left: 55px;
 }
 
 .game-options {
@@ -128,7 +125,7 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    background: url('../../public/grass.jpg');
+    background: url('../../public/grass.png');
     overflow: hidden;
     margin: 0;
 }
@@ -151,7 +148,6 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-direction: column;
 }
 
 .place-bet {

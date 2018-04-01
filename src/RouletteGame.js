@@ -4,7 +4,6 @@ import $ from 'jquery';
 import format from 'biguint-format';
 import crypto from 'crypto';
 import bigInt from "big-integer";
-import ReCAPTCHA from 'react-google-recaptcha';
 
 import ControlBoard from './ControlBoard';
 import GameOptions from './GameOptions';
@@ -20,7 +19,6 @@ class RouletteGame extends React.Component {
     super(props);
     this.state = {
       betValue: 0.1,
-      captchaResponse: '',
       warning: '',
       step: 0,
       skipBankHashWait: false,
@@ -52,14 +50,6 @@ class RouletteGame extends React.Component {
             skipGameEvaluation={ this.state.oldSkipGameEvaluation }
             gameState={ this.props.gameState }
           />
-        <ReCAPTCHA
-            className="google-captcha-custom"
-            sitekey="6Lf69kwUAAAAAFQ-RapYCLD4h3mCAUQXCiw0rLP0"
-            onChange={ captchaResponse => this.setState({ captchaResponse }) }
-            theme="dark"
-            size="normal"
-            ref={ captcha => this._captcha = captcha }
-          />
         <GameOptions
             onSkipBankHashWaitChange={ this._onSkipBankHashWaitChange }
             onSkipGameEvaluationWait={ this._onSkipGameEvaluationWait }
@@ -71,6 +61,7 @@ class RouletteGame extends React.Component {
             betValue={ this.state.betValue }
             gameState={ this.props.gameState }
             warning={ this.state.warning }
+            ref={ board => this._board = board }
           />
       </div>
     );
@@ -85,12 +76,6 @@ class RouletteGame extends React.Component {
   }
 
   _onPlayRouletteButtonClick() {
-    if (this.props.gameState === 'loading') { return; }
-    if (this.state.color === undefined) {
-      this.setState({ warning: 'Please choose color first.' });
-      return;
-    }
-    this.props.storeGameState('loading');
     this.setState({ warning: '' });
 
     this.props.web3.eth.getAccounts(async (error, accounts) => {
@@ -111,15 +96,17 @@ class RouletteGame extends React.Component {
   }
 
   async _playRoulette(userAddress) {
+    if (this.props.gameState === 'loading') { throw new Error('Game is still loading.'); }
+    this.props.storeGameState('loading');
+    if (this.state.color === undefined) { throw new Error('Please choose color first.'); }
+    if (!this._board.state.captchaResponse) { throw new Error('Please fill in captcha!'); }
+
     const rouletteInstance = await this.props.roulette.deployed();
 
     const userFunds = (await rouletteInstance.registeredFunds(userAddress)).toNumber();
     if (userFunds < this.props.web3.toWei(this.state.betValue, 'ether')) {
       throw new Error('Please increase your funds!');
     }
-
-    const captcha = this.state.captchaResponse;
-    if (!captcha) { throw new Error('Please fill in captcha!'); }
 
     const bankAddress = await rouletteInstance.bankAddress();
     const bankFunds = await rouletteInstance.registeredFunds(bankAddress);
@@ -136,6 +123,7 @@ class RouletteGame extends React.Component {
 
     if (storedBankHash === "0x0000000000000000000000000000000000000000000000000000000000000000") {
       // STEP 1
+      const captcha = this._board.state.captchaResponse;
       storedBankHash = await this._requestBankHash(rouletteInstance, userAddress, captcha);
       if (!this.state.skipBankHashWait) {
         await this._waitForBankHash(rouletteInstance, userAddress); // STEP 2
@@ -173,7 +161,7 @@ class RouletteGame extends React.Component {
     });
     const bankHash = await $.get(SET_BANK_HASH_ENDPOINT_URL, { userAddress, captcha });
     console.log({ bankHash });
-    this._captcha.reset();
+    this.board._captcha.reset();
 
     return bankHash;
   }

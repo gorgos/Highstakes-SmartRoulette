@@ -1,10 +1,13 @@
 import React from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import Slider from 'react-rangeslider';
 import 'react-rangeslider/lib/index.css';
 
 class ControlBoard extends React.Component {
   constructor(props) {
     super(props);
+
+    this.state = { captchaResponse: '' };
 
     this._onBetValueChange = this._onBetValueChange.bind(this);
     this._onColorButtonClick = this._onColorButtonClick.bind(this);
@@ -52,6 +55,14 @@ class ControlBoard extends React.Component {
             <span><br /><b style={{ color: '#e7ff3f' }}>Sorry, you lost. :(</b></span>
           }
         </div>
+        <ReCAPTCHA
+            className="google-captcha-custom"
+            sitekey="6Lf69kwUAAAAAFQ-RapYCLD4h3mCAUQXCiw0rLP0"
+            onChange={ captchaResponse => this.setState({ captchaResponse }) }
+            theme="dark"
+            size="normal"
+            ref={ captcha => this._captcha = captcha }
+          />
       </div>
     );
   }
