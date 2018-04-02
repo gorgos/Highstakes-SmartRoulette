@@ -20,3 +20,27 @@ The solution used in this project is a commitment-based approach:
 4. Smart contract calculates a roulette number (0-36) by calculating (bank value XOR player value) % 36.
 
 <sup>*</sup>truly in the sense of not being realistically predictable
+
+## Changelog
+
+### v0.0.3
+Google reCAPTCHA, Code clean-up, User Interface and design improvements
+
+### v0.0.2
+The commitment scheme was improved:
+1. Bank sends commitment
+2. Player sends value
+3. Bank reveals value
+
+Two options for speedup:
+
+(1) Skip waiting for confirmation for bank hash set
+
+(2) Game evaluation in JavaScript
+
+### v0.0.1
+The commitment scheme worked as followed:
+1. Player sends commitment
+2. Bank sends commitment
+3. Player reveals value
+4. Bank reveals value
