@@ -1,15 +1,13 @@
 # High-stakes Smart Roulette
 Smart Contract, AWS Lambda and React App for securely playing Roulette.
 
-## The problem with randomness in smart contracts
+Smart contracts in Ethereum allow anyone to verify its source code. This enables smart contract gambles, where any participant can be certain, that the bank is in fact not cheating on you. If we want to play high-stakes games, there is a potential risk though.
 
-While the problem with online gambling is the necessity of trust, that the results come from a <i>truly</i><sup>*</sup> random source, in smart contracts we can use the fact that it is 100% public to generate trusted randomness. However, we face a new challenge. Since they are 100% public, you cannot store any secrets in them and hence not have a secret seed for the RNG. Therefore the question arises, where do you get randomness from?
-
-The obvious answer would be to use the random data from the latest or future blocks, i.e., block hash, timestamp, number, gas limit, coinbase and/or difficulty. However all of these variables can be influenced by a miner. He cannot freely choose these variables of course, but he can choose to not publish a newly found block, if its result for the randomness does not suit him. If the block reward is lower than the potential gain from the gamble, a miner will do so.
+## The problem
+The miner incentive to cheat becomes a serious threat, because we might a rely on the block hash for our random number generation. Playing high-stakes implies an increased chance for the current block reward to be lower than the expected gain from the gamble. This encourages a miner to cheat by not publishing a newly found block if its block hash implies loosing the gamble.
 
 ## The solution
-
-The solution used in this project is a commitment-based approach:
+A commitment-based approach for generating the random number solves the miner incentive issue. Both parties, i.e., the bank and the player, commit to a secret value $V$ by calculating the commitment $C = SHA(V)$. They first send $C$ and wait for the other person to send $C$. Subsequently they reveal their secret value $V$ and the smart contract can calculate the random number as $V_b \oplus V_p$.
 
 1. The bank chooses a hash and submits it to the smart contract.
 
@@ -17,9 +15,22 @@ The solution used in this project is a commitment-based approach:
 
 3. The bank submits the value fitting to the previously submitted hash.
 
-4. Smart contract calculates a roulette number (0-36) by calculating (bank value XOR player value) % 36.
+4. Smart contract calculates a roulette number (0-36) by calculating (bank value XOR player value) % 37.
 
-<sup>*</sup>truly in the sense of not being realistically predictable
+## Architecture
+![architecture](https://user-images.githubusercontent.com/659390/38194925-f93a5644-367a-11e8-9f70-e6be9accd3a7.png)
+
+
+- Smart Contract: The key component of the application. Is used for all game functions.
+- Front-end: The React application that runs inside a players browser.
+- [AWS Lambda](https://aws.amazon.com/lambda): The nodejs server application that represents the bank.
+- [Netlify](https://netlify.com/): The hosting service for the Front-end application.
+- [serverless](https://serverless.com/): The deployment tool for AWS lambda functions.
+- [AWS S3](https://aws.amazon.com/s3/): The encrypted database of the bank for storing and retrieving secret values.
+- [Web3](https://github.com/ethereum/web3.js): The JavaScript framework for talking with smart contracts.
+- [MetaMask](https://github.com/MetaMask/metamask-extension/): The browser plugin for verifying transactions.
+- [Infura](https://github.com/INFURA/infura/): An Ethereum node service to talk with the Ethereum blockchain without running your own node.
+- [Truffle](https://github.com/trufflesuite/truffle): A framework that provides a default front-end application as well as tools for compiling, deploying and maintaining the deployed smart contracts.
 
 ## Changelog
 
