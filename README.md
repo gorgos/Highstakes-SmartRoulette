@@ -18,8 +18,9 @@ A commitment-based approach for generating the random number solves the miner in
 4. Smart contract calculates a roulette number (0-36) by calculating (bank value XOR player value) % 37.
 
 ## Architecture
-![architecture](https://user-images.githubusercontent.com/659390/38194925-f93a5644-367a-11e8-9f70-e6be9accd3a7.png)
-
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/659390/38194925-f93a5644-367a-11e8-9f70-e6be9accd3a7.png"/>
+</p>
 
 - Smart Contract: The key component of the application. Is used for all game functions.
 - Front-end: The React application that runs inside a players browser.
