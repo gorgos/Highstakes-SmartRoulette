@@ -7,7 +7,7 @@ Smart contracts in Ethereum allow anyone to verify its source code. This enables
 The miner incentive to cheat becomes a serious threat, because we might a rely on the block hash for our random number generation. Playing high-stakes implies an increased chance for the current block reward to be lower than the expected gain from the gamble. This encourages a miner to cheat by not publishing a newly found block if its block hash implies loosing the gamble.
 
 ## The solution
-A commitment-based approach for generating the random number solves the miner incentive issue. Both parties, i.e., the bank and the player, commit to a secret value $V$ by calculating the commitment $C = SHA(V)$. They first send $C$ and wait for the other person to send $C$. Subsequently they reveal their secret value $V$ and the smart contract can calculate the random number as $V_b \oplus V_p$.
+A commitment-based approach for generating the random number solves the miner incentive issue. Both parties, i.e., the bank and the player, commit to a secret value `V` by calculating the commitment `C = SHA(V)`. They first send `C` and wait for the other person to send C. Subsequently they reveal their secret value `V` and the smart contract can calculate the random number as <code>V<sub>b</sub> XOR V<sub>p</sub></code>.
 
 1. The bank chooses a hash and submits it to the smart contract.
 
@@ -36,6 +36,13 @@ A commitment-based approach for generating the random number solves the miner in
 ## Deployed contract
 
 Rinkeby: [0xe4f53c8de2020de632b496290375a419b93f9dc2](https://rinkeby.etherscan.io/address/0xe4f53c8de2020de632b496290375a419b93f9dc2)
+
+## Game round options
+### Skip bank hash waiting option
+Skipping the confirmation from the smart contract that the bank has set its hash significantly decreases the time for a game round. However, in rare situations it might lead to a failed round when in fact the user transaction reaches the smart contract first. Furthermore, it poses a security issue because the bank can look at the pending transactions and quickly send a new transaction with a high gas price for setting its hash. Due to the high gas price it might overtake the user transaction giving the bank the possibility to cheat. Any such cheating would be public and can be detected by a user.
+
+### Game evaluation in JavaScript option
+Since we know the bank and user value, we can calculate the result of the round in the front-end. That is why we do not have to wait for the evalutation inside the smart contract. However, it means a user might have to wait a little bit before he can play the next round. The smart contract only allows one game round per user at the same time.
 
 ## Changelog
 
