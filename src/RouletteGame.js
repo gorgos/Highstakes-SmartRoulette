@@ -109,7 +109,7 @@ class RouletteGame extends React.Component {
     }
 
     const bankAddress = await rouletteInstance.bankAddress();
-    const bankFunds = await rouletteInstance.registeredFunds(bankAddress);
+    const bankFunds = (await rouletteInstance.registeredFunds(bankAddress)).toNumber();
 
     if (bankFunds < this.props.web3.toWei(this.state.betValue, 'ether')) {
       throw new Error('Bank does not have enough funds!');
