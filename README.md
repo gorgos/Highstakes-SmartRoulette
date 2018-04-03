@@ -37,6 +37,13 @@ A commitment-based approach for generating the random number solves the miner in
 
 Rinkeby: [0xe4f53c8de2020de632b496290375a419b93f9dc2](https://rinkeby.etherscan.io/address/0xe4f53c8de2020de632b496290375a419b93f9dc2)
 
+## Game round options
+### Skip bank hash waiting option
+Skipping the confirmation from the smart contract that the bank has set its hash significantly decreases the time for a game round. However, in rare situations it might lead to a failed round when in fact the user transaction reaches the smart contract first. Furthermore, it poses a security issue because the bank can look at the pending transactions and quickly send a new transaction with a high gas price for setting its hash. Due to the high gas price it might overtake the user transaction giving the bank the possibility to cheat. Any such cheating would be public and can be detected by a user.
+
+### Game evaluation in JavaScript option
+Since we know the bank and user value, we can calculate the result of the round in the front-end. That is why we do not have to wait for the evalutation inside the smart contract. However, it means a user might have to wait a little bit before he can play the next round. The smart contract only allows one game round per user at the same time.
+
 ## Changelog
 
 ### v0.0.3
