@@ -7,7 +7,7 @@ Smart contracts in Ethereum allow anyone to verify its source code. This enables
 The miner incentive to cheat becomes a serious threat, because we might a rely on the block hash for our random number generation. Playing high-stakes implies an increased chance for the current block reward to be lower than the expected gain from the gamble. This encourages a miner to cheat by not publishing a newly found block if its block hash implies loosing the gamble.
 
 ## The solution
-A commitment-based approach for generating the random number solves the miner incentive issue. Both parties, i.e., the bank and the player, commit to a secret value $V$ by calculating the commitment $C = SHA(V)$. They first send $C$ and wait for the other person to send $C$. Subsequently they reveal their secret value $V$ and the smart contract can calculate the random number as $V_b \oplus V_p$.
+A commitment-based approach for generating the random number solves the miner incentive issue. Both parties, i.e., the bank and the player, commit to a secret value `V` by calculating the commitment `C = SHA(V)`. They first send `C` and wait for the other person to send C. Subsequently they reveal their secret value `V` and the smart contract can calculate the random number as `V_b XOR V_p`.
 
 1. The bank chooses a hash and submits it to the smart contract.
 
