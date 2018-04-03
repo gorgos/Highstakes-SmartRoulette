@@ -33,6 +33,10 @@ A commitment-based approach for generating the random number solves the miner in
 - [Infura](https://github.com/INFURA/infura/): An Ethereum node service to talk with the Ethereum blockchain without running your own node.
 - [Truffle](https://github.com/trufflesuite/truffle): A framework that provides a default front-end application as well as tools for compiling, deploying and maintaining the deployed smart contracts.
 
+## Deployed contract
+
+Rinkeby: [0xe4f53c8de2020de632b496290375a419b93f9dc2](https://rinkeby.etherscan.io/address/0xe4f53c8de2020de632b496290375a419b93f9dc2)
+
 ## Changelog
 
 ### v0.0.3

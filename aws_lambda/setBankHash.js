@@ -14,7 +14,7 @@ const s3 = new AWS.S3({ sslEnabled: true });
 const googleRecaptcha = require('google-recaptcha');
 
 const BANK_ADDRESS = '0x15ae150d7dC03d3B635EE90b85219dBFe071ED35';
-const CONTRACT_ADDRESS = '0x128a71fccc792e808b7b34aa416df3ef51da7d6d';
+const CONTRACT_ADDRESS = '0xe4f53c8de2020de632b496290375a419b93f9dc2';
 const NETWORK_NAME = 'rinkeby';
 
 const NETWORK_IDS = {
